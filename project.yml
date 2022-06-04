@@ -1,0 +1,17 @@
+targetNamespace: ''
+parameters: {}
+packages:
+  - name: do-floatpod-automation
+    environment: {}
+    parameters: {}
+    annotations: {}
+    actions:
+      - name: start
+        binary: false
+        main: ''
+        runtime: 'nodejs:default'
+        web: true
+        parameters: {}
+        environment: {}
+        annotations: {}
+        limits: {}
