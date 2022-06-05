@@ -59,7 +59,6 @@ var job = new cron(
 );
 job.start();
 
-
 function checkSession(deviceName,floatDevice,floatStatus){
   logger.debug("FloatStatus",floatStatus);
   if(floatStatus.status==3){
