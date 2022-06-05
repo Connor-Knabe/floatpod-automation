@@ -65,15 +65,18 @@ function checkSession(deviceName,floatDevice,floatStatus){
     const minsTillSessionEnds = (floatStatus.duration/60 - 5);
     floatDevice.minutes++;
 
-    if(floatDevice.minutes > minsTillSessionEnds){
+    if(floatDevice.minutes > minsTillSessionEnds && floatDevice.inActiveSession){
       //send request to turn on fan
-    } else if (floatDevice.minutes > 1) {
+    } else if (floatDevice.minutes > 5 && !floatDevice.inActiveSession) {
       //send request to turn fan off
     }
+    
+    floatDevice.inActiveSession = true;
     logger.debug('status',floatStatus);
     logger.debug('name',deviceName)
     logger.debug('floatdevice min', floatDevice.minutes);
   } else if (floatStatus.status == 1){
+    floatDevice.inActiveSession = false;
     floatDevice.minutes++;
     if(floatDevice.minutes > 10){
       //send request to take out of session
