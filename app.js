@@ -18,9 +18,11 @@ logger.level = 'info';
 "set_session_cancel",
 */
 
-logger.info("App start");
+logger.info("FloatPod automation start");
 var job = new cron(
   '0 * * * * *',
+  //debug
+  //'* * * * * *',
   async () => {
     for (var key in login.floatDevices) {
       if (login.floatDevices.hasOwnProperty(key)) {
@@ -64,6 +66,10 @@ async function checkSession(deviceName,floatDevice,floatStatus){
         logger.info(`${deviceName}: turning fan on end of session`);
         await got.get(floatDevice.fanOnUrl);
         floatDevice.minutesInSession = 0;
+      } else if (floatDevice.minutesInSession >= 1 && floatDevice.minutesInSession <= 1 ) {
+        logger.info(`${deviceName}: turning fan off 1 mins into active session`);
+        await got.get(floatDevice.fanOffUrl);
+        floatDevice.minutesInSession++;
       } else {
         floatDevice.minutesInSession++;
       }
@@ -73,7 +79,6 @@ async function checkSession(deviceName,floatDevice,floatStatus){
       floatDevice.minutesInSession = 1;
     }
 
-    // logger.debug('status',floatStatus);
   } else if (floatStatus.status == 1){
     const theTime = new Date();
     if(floatDevice.minutesInSession > 60 && (theTime.getHours() >= 0 && theTime.getHours() < 6)){
