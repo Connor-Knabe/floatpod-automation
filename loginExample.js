@@ -5,7 +5,6 @@ module.exports.floatDevices = {
         url:'http://192.168.0.123/api',
         minutesInSession:0,
         fanOnUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
-        fanOffUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
-        allowFanOn:true
+        fanOffUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf'
     }
 }

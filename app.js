@@ -3,7 +3,7 @@ var cron = require('cron').CronJob;
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
-logger.level = 'debug';
+logger.level = 'info';
 /*
  * Commands:
 "ping",
@@ -18,17 +18,9 @@ logger.level = 'debug';
 "set_session_cancel",
 */
 
-// exports.main = async () => {
-//   const data = await got.post('https://httpbin.org/anything', {
-//     json: {
-//       hello: 'world'
-//     }
-//   }).json();
-//   return {"data":data};
-// }
-
+logger.info("App start");
 var job = new cron(
-  '* * * * * *',
+  '0 * * * * *',
   async () => {
     for (var key in login.floatDevices) {
       if (login.floatDevices.hasOwnProperty(key)) {
@@ -44,13 +36,13 @@ var job = new cron(
           var floatStatus = data ? JSON.parse(data.body) : null;
           floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
         } catch (ex){
-          logger.error('Failed to parse float status response', ex)
+          logger.error(`${deviceName}: failed to parse float status response ${ex}`)
         }
 
         if(floatStatus){
           checkSession(key,floatDevice,floatStatus);
         } else {
-          logger.error("Couldn't find float status");
+          logger.error(`${deviceName}: couldn't find float status`);
         }
       }
     }
@@ -62,24 +54,23 @@ var job = new cron(
 job.start();
 
 async function checkSession(deviceName,floatDevice,floatStatus){
-  // logger.debug("FloatStatus",floatStatus);
+  logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
   if(floatStatus.status==3){
     const minsTillSessionEnds = floatStatus.duration/60 - 5;
-    logger.debug('floatdevice min', floatDevice.minutesInSession);
-    logger.debug('mins till session ends',minsTillSessionEnds);
+    logger.debug(`${deviceName}: mins ${floatDevice.minutesInSession}`);
+    logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
     if(floatStatus.duration/60 != 5){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
-        logger.info('Turning fan on end of session');
-        // await got.get(floatDevice.fanOnUrl);
+        logger.info(`${deviceName}: turning fan on end of session`);
+        await got.get(floatDevice.fanOnUrl);
         floatDevice.minutesInSession = 0;
       } else {
         floatDevice.minutesInSession++;
       }
     } else if(floatDevice.minutesInSession > 1){
-      logger.info('Turning fan on manual 5 min timer');
-      // await got.get(floatDevice.fanOnUrl);
+      logger.info(`${deviceName} turning fan on manual 5 min timer`);
+      await got.get(floatDevice.fanOnUrl);
       floatDevice.minutesInSession = 1;
-
     }
 
     // logger.debug('status',floatStatus);
@@ -87,7 +78,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     const theTime = new Date();
     if(floatDevice.minutesInSession > 60 && (theTime.getHours() >= 0 && theTime.getHours() < 6)){
       //send request to take out of session
-      logger.info(`Taking device out of session as it's been over 60 mins and overnight`);
+      logger.info(`${deviceName}: taking out of session as it's been over 60 mins and overnight`);
       await got.post(floatDevice.url, {
         form:{
           "api_key": login.apiKey,
@@ -97,12 +88,12 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     } 
     //only want to turn off fan once when in new session screen
     if(floatDevice.minutesInSession==0){
-      logger.info('Turning fan off when in new session screen');
+      logger.info(`${deviceName}: turning fan off when in new session screen`);
       await got.get(floatDevice.fanOffUrl);
     }
     floatDevice.minutesInSession++;
   } else if (floatStatus.status == 0) {
-    logger.info('No session active screen');
+    logger.debug(`${deviceName}: no session active screen.`);
     floatDevice.minutesInSession = 0;
   }
 }
