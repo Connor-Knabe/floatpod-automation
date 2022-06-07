@@ -72,10 +72,6 @@ async function checkSession(deviceName,floatDevice,floatStatus){
         logger.info('Turning fan on end of session');
         // await got.get(floatDevice.fanOnUrl);
         floatDevice.minutesInSession = 0;
-      } else if (floatDevice.minutesInSession >= 7 && floatDevice.minutesInSession <= 7 ) {
-        logger.info('Turning fan off 7 mins into active session');
-        // await got.get(floatDevice.fanOffUrl);
-        floatDevice.minutesInSession++;
       } else {
         floatDevice.minutesInSession++;
       }
