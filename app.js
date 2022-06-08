@@ -3,7 +3,7 @@ var cron = require('cron').CronJob;
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
-logger.level = 'info';
+logger.level = 'debug';
 /*
  * Commands:
 "ping",
@@ -55,31 +55,39 @@ var job = new cron(
 );
 job.start();
 
+
 async function checkSession(deviceName,floatDevice,floatStatus){
   logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
+
+  if(floatDevice.isNewSession){
+    floatDevice.minutesInSession = 0;
+  }
+
   if(floatStatus.status==3){
+    floatDevice.isNewSession = false;
+
     const minsTillSessionEnds = floatStatus.duration/60 - 5;
     logger.debug(`${deviceName}: mins ${floatDevice.minutesInSession}`);
     logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
+    logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
+
     if(floatStatus.duration/60 != 5){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
         logger.info(`${deviceName}: turning fan on end of session`);
         await got.get(floatDevice.fanOnUrl);
-        floatDevice.minutesInSession = 0;
-      } else if (floatDevice.minutesInSession >= 1 && floatDevice.minutesInSession <= 1 ) {
-        logger.info(`${deviceName}: turning fan off 1 mins into active session`);
+      } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0 ) {
+        logger.info(`${deviceName}: turning fan off 0 mins into active session`);
         await got.get(floatDevice.fanOffUrl);
-        floatDevice.minutesInSession++;
-      } else {
-        floatDevice.minutesInSession++;
       }
-    } else if(floatDevice.minutesInSession > 1){
+      floatDevice.minutesInSession++;
+    } else if(floatDevice.minutesInSession >= 0){
       logger.info(`${deviceName} turning fan on manual 5 min timer`);
       await got.get(floatDevice.fanOnUrl);
-      floatDevice.minutesInSession = 1;
+      floatDevice.minutesInSession = -1;
     }
 
   } else if (floatStatus.status == 1){
+    floatDevice.isNewSession = false;
     const theTime = new Date();
     if(floatDevice.minutesInSession > 60 && (theTime.getHours() >= 0 && theTime.getHours() < 6)){
       //send request to take out of session
@@ -98,6 +106,8 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     }
     floatDevice.minutesInSession++;
   } else if (floatStatus.status == 0) {
+    floatDevice.isNewSession = true;
+
     logger.debug(`${deviceName}: no session active screen.`);
     floatDevice.minutesInSession = 0;
   }
