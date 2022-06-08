@@ -117,7 +117,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
 function turnFanOffTimer(floatDevice){
   clearTimeout(floatDevice.timeout);
   floatDevice.timeout = setTimeout(async () => {
-    const timeoutMins = 15;
+    const timeoutMins = 25;
     logger.info(`${deviceName}: turning fan off after ${timeoutMins}`);
     await got.get(floatDevice.fanOffUrl);
     }, 15 * 60 * 1000)
