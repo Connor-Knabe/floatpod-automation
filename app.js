@@ -75,6 +75,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
         logger.info(`${deviceName}: turning fan on end of session`);
         await got.get(floatDevice.fanOnUrl);
+        turnFanOffTimer(floatDevice);
       } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0 ) {
         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
         await got.get(floatDevice.fanOffUrl);
@@ -83,11 +84,11 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     } else if(floatDevice.minutesInSession >= 0){
       logger.info(`${deviceName} turning fan on manual 5 min timer`);
       await got.get(floatDevice.fanOnUrl);
+      turnFanOffTimer(floatDevice);
       floatDevice.minutesInSession = -1;
     }
 
   } else if (floatStatus.status == 1){
-    floatDevice.isNewSession = false;
     const theTime = new Date();
     if(floatDevice.minutesInSession > 60 && (theTime.getHours() >= 0 && theTime.getHours() < 6)){
       //send request to take out of session
@@ -111,4 +112,13 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     logger.debug(`${deviceName}: no session active screen.`);
     floatDevice.minutesInSession = 0;
   }
+}
+
+function turnFanOffTimer(floatDevice){
+  clearTimeout(floatDevice.timeout);
+  floatDevice.timeout = setTimeout(async () => {
+    const timeoutMins = 15;
+    logger.info(`${deviceName}: turning fan off after ${timeoutMins}`);
+    await got.get(floatDevice.fanOffUrl);
+    }, 15 * 60 * 1000)
 }
