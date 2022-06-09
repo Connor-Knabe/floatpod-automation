@@ -17,8 +17,8 @@ logger.level = 'info';
 "set_session_start",
 "set_session_cancel",
 */
-
 logger.info("FloatPod automation start");
+
 var job = new cron(
   '0 * * * * *',
   //debug
@@ -122,10 +122,9 @@ function turnFanOffTimer(deviceName, floatDevice){
   logger.debug("turnFanOffTimer");
   clearTimeout(floatDevice.timeout);
   floatDevice.timeout = setTimeout(() => {
-    const timeoutMins = 25;
-    logger.info(`${deviceName}: turning fan off after ${timeoutMins}`);
+    logger.info(`${deviceName}: turning fan off after ${floatDevice.timeoutMins}`);
     got.get(floatDevice.fanOffUrl);
-    }, timeoutMins * 60 * 1000)
+    }, floatDevice.timeoutMins * 60 * 1000)
   // }, 0 * 60 * 1000)
 
 }
