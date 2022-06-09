@@ -93,7 +93,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
 
   } else if (floatStatus.status == 1){
     const theTime = new Date();
-    if(floatDevice.minutesInSession > 60 && (theTime.getHours() >= 0 && theTime.getHours() < 6)){
+    if(theTime.getHours() >= 0 && theTime.getHours() < 7){
       //send request to take out of session
       logger.info(`${deviceName}: taking out of session as it's been over 60 mins and overnight`);
       await got.post(floatDevice.url, {
