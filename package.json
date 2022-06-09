@@ -10,7 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "cron": "^2.0.0",
+    "express": "^4.18.1",
     "got": "^11",
-    "log4js":"6.5.2"
+    "log4js": "6.5.2"
   }
 }

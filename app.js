@@ -1,5 +1,7 @@
 const got = require('got');
-var cron = require('cron').CronJob;
+const cron = require('cron').CronJob;
+const express = require('express');
+const app = express();
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
@@ -17,7 +19,15 @@ logger.level = 'info';
 "set_session_start",
 "set_session_cancel",
 */
+
 logger.info("FloatPod automation start");
+
+
+app.get('/', function (req, res) {
+  res.send('200');
+});
+
+app.listen(2335);
 
 var job = new cron(
   '0 * * * * *',
