@@ -3,7 +3,7 @@ var cron = require('cron').CronJob;
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
-logger.level = 'info';
+logger.level = 'debug';
 /*
  * Commands:
 "ping",
@@ -20,9 +20,9 @@ logger.level = 'info';
 
 logger.info("FloatPod automation start");
 var job = new cron(
-  '0 * * * * *',
+  // '0 * * * * *',
   //debug
-  //'* * * * * *',
+  '* * * * * *',
   async () => {
     for (var key in login.floatDevices) {
       if (login.floatDevices.hasOwnProperty(key)) {
@@ -61,6 +61,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
 
   if(floatDevice.isNewSession){
     floatDevice.minutesInSession = 0;
+    logger.debug("mins set to 0");
   }
 
   if(floatStatus.status==3){
@@ -76,9 +77,11 @@ async function checkSession(deviceName,floatDevice,floatStatus){
         logger.info(`${deviceName}: turning fan on end of session`);
         await got.get(floatDevice.fanOnUrl);
         turnFanOffTimer(floatDevice);
-      } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0 ) {
+        floatDevice.minutesInSession = 1;
+      } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
         await got.get(floatDevice.fanOffUrl);
+        floatDevice.minutesInSession = 1
       }
       floatDevice.minutesInSession++;
     } else if(floatDevice.minutesInSession >= 0){
@@ -102,13 +105,14 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     } 
     //only want to turn off fan once when in new session screen
     if(floatDevice.minutesInSession==0){
+      floatDevice.isNewSession = false;
       logger.info(`${deviceName}: turning fan off when in new session screen`);
       await got.get(floatDevice.fanOffUrl);
+      floatDevice.minutesInSession = 1;
     }
     floatDevice.minutesInSession++;
   } else if (floatStatus.status == 0) {
     floatDevice.isNewSession = true;
-
     logger.debug(`${deviceName}: no session active screen.`);
     floatDevice.minutesInSession = 0;
   }
@@ -116,9 +120,11 @@ async function checkSession(deviceName,floatDevice,floatStatus){
 
 function turnFanOffTimer(floatDevice){
   clearTimeout(floatDevice.timeout);
-  floatDevice.timeout = setTimeout(async () => {
+  floatDevice.timeout = setTimeout(() => {
     const timeoutMins = 25;
     logger.info(`${deviceName}: turning fan off after ${timeoutMins}`);
-    await got.get(floatDevice.fanOffUrl);
-    }, 15 * 60 * 1000)
+    got.get(floatDevice.fanOffUrl);
+    // }, 15 * 60 * 1000)
+  }, 2 * 60 * 1000)
+
 }
