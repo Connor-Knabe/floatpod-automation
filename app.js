@@ -20,9 +20,9 @@ logger.level = 'debug';
 
 logger.info("FloatPod automation start");
 var job = new cron(
-  // '0 * * * * *',
+  '0 * * * * *',
   //debug
-  '* * * * * *',
+  // '* * * * * *',
   async () => {
     for (var key in login.floatDevices) {
       if (login.floatDevices.hasOwnProperty(key)) {
@@ -76,7 +76,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
         logger.info(`${deviceName}: turning fan on end of session`);
         await got.get(floatDevice.fanOnUrl);
-        turnFanOffTimer(floatDevice);
+        turnFanOffTimer(deviceName,floatDevice);
         floatDevice.minutesInSession = 1;
       } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
@@ -118,13 +118,14 @@ async function checkSession(deviceName,floatDevice,floatStatus){
   }
 }
 
-function turnFanOffTimer(floatDevice){
+function turnFanOffTimer(deviceName, floatDevice){
+  logger.debug("turnFanOffTimer");
   clearTimeout(floatDevice.timeout);
   floatDevice.timeout = setTimeout(() => {
     const timeoutMins = 25;
     logger.info(`${deviceName}: turning fan off after ${timeoutMins}`);
     got.get(floatDevice.fanOffUrl);
-    // }, 15 * 60 * 1000)
-  }, 2 * 60 * 1000)
+    }, timeoutMins * 60 * 1000)
+  // }, 0 * 60 * 1000)
 
 }
