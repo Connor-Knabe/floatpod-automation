@@ -2,10 +2,15 @@ const got = require('got');
 const cron = require('cron').CronJob;
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser')
+app.use(bodyParser.json())
+
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = 'info';
+logger.info("FloatPod automation start");
+
 /*
  * Commands:
 "ping",
@@ -20,11 +25,13 @@ logger.level = 'info';
 "set_session_cancel",
 */
 
-logger.info("FloatPod automation start");
-
-
 app.get('/', function (req, res) {
   res.send('200');
+});
+
+app.post('/color', function (req, res) { 
+  login.floatDevices[req.body['room_title']].color = req.body['room_lighting_color'];
+  res.send('welcome, ' + req.body.color)
 });
 
 app.listen(2335);
@@ -65,28 +72,23 @@ var job = new cron(
 );
 job.start();
 
-
 async function checkSession(deviceName,floatDevice,floatStatus){
   logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
-
   if(floatDevice.isNewSession){
     floatDevice.minutesInSession = 0;
     logger.debug("mins set to 0");
   }
-
   if(floatStatus.status==3){
     floatDevice.isNewSession = false;
-
     const minsTillSessionEnds = floatStatus.duration/60 - 5;
     logger.debug(`${deviceName}: mins ${floatDevice.minutesInSession}`);
     logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
     logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
-
     if(floatStatus.duration/60 != 5){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
-        logger.info(`${deviceName}: turning fan on end of session`);
-        await got.get(floatDevice.fanOnUrl);
-        turnFanOffTimer(deviceName,floatDevice);
+        logger.info(`${deviceName}: turning light and fan on end of session`);
+        turnLightAndFanOn(floatDevice);
+        turnLightAndFanOffTimer(deviceName,floatDevice);
         floatDevice.minutesInSession = 1;
       } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
@@ -95,9 +97,9 @@ async function checkSession(deviceName,floatDevice,floatStatus){
       }
       floatDevice.minutesInSession++;
     } else if(floatDevice.minutesInSession >= 0){
-      logger.info(`${deviceName} turning fan on manual 5 min timer`);
-      await got.get(floatDevice.fanOnUrl);
-      turnFanOffTimer(floatDevice);
+      logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
+      turnLightAndFanOn(floatDevice);
+      turnLightAndFanOffTimer(floatDevice);
       floatDevice.minutesInSession = -1;
     }
 
@@ -105,7 +107,7 @@ async function checkSession(deviceName,floatDevice,floatStatus){
     const theTime = new Date();
     if(theTime.getHours() >= 0 && theTime.getHours() < 7){
       //send request to take out of session
-      logger.info(`${deviceName}: taking out of session as it's been over 60 mins and overnight`);
+      logger.info(`${deviceName}: taking out of session overnight`);
       await got.post(floatDevice.url, {
         form:{
           "api_key": login.apiKey,
@@ -128,13 +130,20 @@ async function checkSession(deviceName,floatDevice,floatStatus){
   }
 }
 
-function turnFanOffTimer(deviceName, floatDevice){
-  logger.debug("turnFanOffTimer");
+function turnLightAndFanOffTimer(deviceName, floatDevice){
+  logger.debug("turnLightAndFanOffTimer");
   clearTimeout(floatDevice.timeout);
   floatDevice.timeout = setTimeout(() => {
-    logger.info(`${deviceName}: turning fan off after ${floatDevice.timeoutMins}`);
+    logger.info(`${deviceName}: turning light and fan off after ${floatDevice.timeoutMins}`);
     got.get(floatDevice.fanOffUrl);
+    //got.get(floatDevice.lightOffUrl);
+
     }, floatDevice.timeoutMins * 60 * 1000)
   // }, 0 * 60 * 1000)
+}
 
+
+async function turnLightAndFanOn(floatDevice){
+  await got.get(floatDevice.fanOnUrl);
+  // await got.get(floatDevice.lightOnUrl);
 }
