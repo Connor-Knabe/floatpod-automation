@@ -6,6 +6,8 @@ module.exports.floatDevices = {
         minutesInSession:0,
         fanOnUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
         fanOffUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
+        // lightOnUrl:'',
+        // lightOffUrl:'',
         isNewSession: true,
         timeout: null,
         timeoutMins: 0
