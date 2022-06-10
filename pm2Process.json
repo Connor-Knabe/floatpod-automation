@@ -3,8 +3,7 @@
         {
             "name": "fpa",
             "script": "app.js",
-			"log_date_format" : "MM/DD/YYYY HH:mm:ss",
-			"exec_interpreter" : "/root/.nvm/versions/node/v16.15.1/bin/node"
+			"log_date_format" : "MM/DD/YYYY HH:mm:ss"
 
 		}
 	]
