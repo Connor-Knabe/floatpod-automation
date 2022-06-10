@@ -10,6 +10,7 @@ var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = 'info';
 logger.info("FloatPod automation start");
+logger.error("FloatPod automation error start");
 
 /*
  * Commands:
@@ -30,8 +31,15 @@ app.get('/', function (req, res) {
 });
 
 app.post('/color', function (req, res) { 
-  login.floatDevices[req.body['room_title']].color = req.body['room_lighting_color'];
-  res.send('welcome, ' + req.body.color)
+  try{
+    login.floatDevices[req.body['room_title']].lightStripColor = req.body['room_lighting_color'];
+  } catch (ex){
+    logger.error("failed to parse room_lighting_color", ex)
+
+  }
+  //wait until next light on event starts before updating light color
+  res.send("OK");
+  // res.send('welcome, ' + req.body.color)
 });
 
 app.listen(2336);
@@ -136,6 +144,7 @@ function turnLightAndFanOffTimer(deviceName, floatDevice){
   floatDevice.timeout = setTimeout(() => {
     logger.info(`${deviceName}: turning light and fan off after ${floatDevice.timeoutMins}`);
     got.get(floatDevice.fanOffUrl);
+    //reset light to original color
     //got.get(floatDevice.lightOffUrl);
 
     }, floatDevice.timeoutMins * 60 * 1000)
@@ -145,5 +154,6 @@ function turnLightAndFanOffTimer(deviceName, floatDevice){
 
 async function turnLightAndFanOn(floatDevice){
   await got.get(floatDevice.fanOnUrl);
+  //floatDevice.lightStripColor
   // await got.get(floatDevice.lightOnUrl);
 }
