@@ -144,7 +144,7 @@ async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice){
   // await got.get(floatDevice.lightOnUrl);
 
   clearTimeout(floatDevice.fanTimeout);
-  floatDevice.postSessionLightFanTimeout = setTimeout(() => {
+  floatDevice.postSessionLightFanTimeout = setTimeout(async () => {
     logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins}`);
     await got.get(floatDevice.fanOffUrl);
     //reset light to original color
@@ -170,7 +170,7 @@ async function lightOnOffPreSessionTimer(floatDevice){
     }
 }
 
-function checkForOverNightSession(floatDevice){
+async function checkForOverNightSession(floatDevice){
   const theTime = new Date();
   if(theTime.getHours() >= 0 && theTime.getHours() < 7){
     //send request to take out of session
