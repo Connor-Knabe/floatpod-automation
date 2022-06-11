@@ -23,18 +23,18 @@ module.exports = function(got,logger) {
           if(activeSessionNonLast5Min){
             if(floatDevice.minutesInSession >= minsTillSessionEnds){
               logger.info(`${deviceName}: turning light and fan on end of session`);
-              lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
+              await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
               floatDevice.minutesInSession = 1;
             } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
               logger.info(`${deviceName}: turning fan off 0 mins into active session`);
-              //lightFanService.lightOnOffPreSessionTimer(floatDevice);
+              //await lightFanService.lightOnOffPreSessionTimer(floatDevice);
               await got.get(floatDevice.fanOffUrl);
               floatDevice.minutesInSession = 1
             }
             floatDevice.minutesInSession++;
           } else if(floatDevice.minutesInSession >= 0){
             logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
-            lightFanService.lightAndFanOnOffPostSessionTimer(floatDevice);
+            await lightFanService.lightAndFanOnOffPostSessionTimer(floatDevice);
             floatDevice.minutesInSession = -1;
           }
       
@@ -44,7 +44,7 @@ module.exports = function(got,logger) {
           if(floatDevice.minutesInSession==0){
             floatDevice.isNewSession = false;
             logger.info(`${deviceName}: turning fan off when in new session screen`);
-            //lightFanService.lightOnOffPreSessionTimer(floatDevice);
+            //await lightFanService.lightOnOffPreSessionTimer(floatDevice);
             await got.get(floatDevice.fanOffUrl);
             floatDevice.minutesInSession = 1;
           }
