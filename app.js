@@ -82,78 +82,104 @@ job.start();
 
 async function checkSession(deviceName,floatDevice,floatStatus){
   logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
+  const deviceNewSession = floatStatus.status == 1;
+  const deviceActiveSession = floatStatus.status==3;
+  const idleScreen = floatStatus.status == 0;
+
   if(floatDevice.isNewSession){
     floatDevice.minutesInSession = 0;
     logger.debug("mins set to 0");
   }
-  if(floatStatus.status==3){
+  if(deviceActiveSession){
     floatDevice.isNewSession = false;
     const minsTillSessionEnds = floatStatus.duration/60 - 5;
+    const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
+
     logger.debug(`${deviceName}: mins ${floatDevice.minutesInSession}`);
     logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
     logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
-    if(floatStatus.duration/60 != 5){
+
+
+    if(activeSessionNonLast5Min){
       if(floatDevice.minutesInSession >= minsTillSessionEnds){
         logger.info(`${deviceName}: turning light and fan on end of session`);
-        turnLightAndFanOn(floatDevice);
-        turnLightAndFanOffTimer(deviceName,floatDevice);
+        lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
         floatDevice.minutesInSession = 1;
       } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
+        //lightOnOffPreSessionTimer(floatDevice);
         await got.get(floatDevice.fanOffUrl);
         floatDevice.minutesInSession = 1
       }
       floatDevice.minutesInSession++;
     } else if(floatDevice.minutesInSession >= 0){
       logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
-      turnLightAndFanOn(floatDevice);
-      turnLightAndFanOffTimer(floatDevice);
+      lightAndFanOnOffPostSessionTimer(floatDevice);
       floatDevice.minutesInSession = -1;
     }
 
-  } else if (floatStatus.status == 1){
-    const theTime = new Date();
-    if(theTime.getHours() >= 0 && theTime.getHours() < 7){
-      //send request to take out of session
-      logger.info(`${deviceName}: taking out of session overnight`);
-      await got.post(floatDevice.url, {
-        form:{
-          "api_key": login.apiKey,
-          "command":"set_session_cancel"
-        }
-      });
-    } 
+  } else if (deviceNewSession){
+    checkForOverNightSession(floatDevice);
     //only want to turn off fan once when in new session screen
     if(floatDevice.minutesInSession==0){
       floatDevice.isNewSession = false;
       logger.info(`${deviceName}: turning fan off when in new session screen`);
+      //lightOnOffPreSessionTimer(floatDevice);
       await got.get(floatDevice.fanOffUrl);
       floatDevice.minutesInSession = 1;
     }
     floatDevice.minutesInSession++;
-  } else if (floatStatus.status == 0) {
+  } else if (idleScreen) {
     floatDevice.isNewSession = true;
     logger.debug(`${deviceName}: no session active screen.`);
     floatDevice.minutesInSession = 0;
   }
 }
 
-function turnLightAndFanOffTimer(deviceName, floatDevice){
-  logger.debug("turnLightAndFanOffTimer");
-  clearTimeout(floatDevice.timeout);
-  floatDevice.timeout = setTimeout(() => {
-    logger.info(`${deviceName}: turning light and fan off after ${floatDevice.timeoutMins}`);
-    got.get(floatDevice.fanOffUrl);
+async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice){
+  logger.debug("turnLightAndFanOnOffTimer");
+
+  await got.get(floatDevice.fanOnUrl);
+  //turn light on
+  // await got.get(floatDevice.lightOnUrl);
+
+  clearTimeout(floatDevice.fanTimeout);
+  floatDevice.postSessionLightFanTimeout = setTimeout(() => {
+    logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins}`);
+    await got.get(floatDevice.fanOffUrl);
     //reset light to original color
     //got.get(floatDevice.lightOffUrl);
 
-    }, floatDevice.timeoutMins * 60 * 1000)
+    }, floatDevice.fanTimeoutMins * 60 * 1000)
   // }, 0 * 60 * 1000)
 }
 
+async function lightOnOffPreSessionTimer(floatDevice){
+  if(floatDevice.lightsOnPreFloat){
+    //floatDevice.lightStripColor
 
-async function turnLightAndFanOn(floatDevice){
-  await got.get(floatDevice.fanOnUrl);
-  //floatDevice.lightStripColor
-  // await got.get(floatDevice.lightOnUrl);
+    logger.info(`${deviceName}: turning light on for ${floatDevice.preSessionLightTimeout}`);
+    clearTimeout(floatDevice.preSessionLightTimeout);
+    floatDevice.preSessionLightTimeout = setTimeout(() => {
+      logger.info(`${deviceName}: turning light off after timeout ${floatDevice.preSessionLightTimeoutMins}`);
+      // await got.get(floatDevice.lightOff);
+      //reset light to original color
+      //got.get(floatDevice.lightOffUrl);
+
+      }, floatDevice.preSessionLightTimeout * 60 * 1000)
+    }
+}
+
+function checkForOverNightSession(floatDevice){
+  const theTime = new Date();
+  if(theTime.getHours() >= 0 && theTime.getHours() < 7){
+    //send request to take out of session
+    logger.info(`${deviceName}: taking out of session overnight`);
+    await got.post(floatDevice.url, {
+      form:{
+        "api_key": login.apiKey,
+        "command":"set_session_cancel"
+      }
+    });
+  } 
 }
