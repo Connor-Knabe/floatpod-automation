@@ -1,4 +1,6 @@
 module.exports = function(got,logger) {
+    const lightFanService = require('./lightFanService.js')(got,logger);
+
     async function checkFloatStatus(deviceName,floatDevice,floatStatus){
         logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
         const deviceNewSession = floatStatus.status == 1;
@@ -21,18 +23,18 @@ module.exports = function(got,logger) {
           if(activeSessionNonLast5Min){
             if(floatDevice.minutesInSession >= minsTillSessionEnds){
               logger.info(`${deviceName}: turning light and fan on end of session`);
-              lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
+              lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
               floatDevice.minutesInSession = 1;
             } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
               logger.info(`${deviceName}: turning fan off 0 mins into active session`);
-              //lightOnOffPreSessionTimer(floatDevice);
+              //lightFanService.lightOnOffPreSessionTimer(floatDevice);
               await got.get(floatDevice.fanOffUrl);
               floatDevice.minutesInSession = 1
             }
             floatDevice.minutesInSession++;
           } else if(floatDevice.minutesInSession >= 0){
             logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
-            lightAndFanOnOffPostSessionTimer(floatDevice);
+            lightFanService.lightAndFanOnOffPostSessionTimer(floatDevice);
             floatDevice.minutesInSession = -1;
           }
       
@@ -42,7 +44,7 @@ module.exports = function(got,logger) {
           if(floatDevice.minutesInSession==0){
             floatDevice.isNewSession = false;
             logger.info(`${deviceName}: turning fan off when in new session screen`);
-            //lightOnOffPreSessionTimer(floatDevice);
+            //lightFanService.lightOnOffPreSessionTimer(floatDevice);
             await got.get(floatDevice.fanOffUrl);
             floatDevice.minutesInSession = 1;
           }
@@ -53,8 +55,20 @@ module.exports = function(got,logger) {
           floatDevice.minutesInSession = 0;
         }
       }
-
-      return {
-		checkFloatStatus: checkFloatStatus,
-      }
+    async function checkForOverNightSession(floatDevice){
+        const theTime = new Date();
+        if(theTime.getHours() >= 0 && theTime.getHours() < 7){
+            //send request to take out of session
+            logger.info(`${deviceName}: taking out of session overnight`);
+            await got.post(floatDevice.url, {
+                form:{
+                    "api_key": login.apiKey,
+                    "command":"set_session_cancel"
+                }
+            });
+        } 
+    }
+    return {
+        checkFloatStatus: checkFloatStatus
+    }
 };
