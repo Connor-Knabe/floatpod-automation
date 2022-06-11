@@ -1,2 +1,3 @@
+v0.0.3 - working on light automation
 v0.0.2 - refactor into smaller files
 v0.0.1 - does fan automation
