@@ -14,7 +14,7 @@ module.exports = function(got,logger) {
           const minsTillSessionEnds = floatStatus.duration/60 - 5;
           const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
       
-          logger.debug(`${deviaceName}: mins ${floatDevice.minutesInSession}`);
+          logger.debug(`${deviceName}: mins ${floatDevice.minutesInSession}`);
           logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
           logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
       

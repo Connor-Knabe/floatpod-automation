@@ -9,7 +9,11 @@ module.exports.floatDevices = {
         // lightOnUrl:'',
         // lightOffUrl:'',
         isNewSession: true,
-        timeout: null,
-        timeoutMins: 0
+        postSessionLightFanTimeout: null,
+        postSessionLightFanTimeoutMins: 25,
+        preSessionLightTimeout: null,
+        preSessionLightTimeoutMins: 7,
+        lightStripColor: "hexValue",
+        lightsOnPreFloat: false
     }
 }
