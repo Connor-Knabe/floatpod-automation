@@ -23,7 +23,7 @@ module.exports = function(got,logger) {
 
             logger.info(`${deviceName}: turning light on for ${floatDevice.preSessionLightTimeout}`);
             clearTimeout(floatDevice.preSessionLightTimeout);
-            floatDevice.preSessionLightTimeout = setTimeout(() => {
+            floatDevice.preSessionLightTimeout = setTimeout(async () => {
                 logger.info(`${deviceName}: turning light off after timeout ${floatDevice.preSessionLightTimeoutMins}`);
                 await got.get(floatDevice.lightOffUrl);
                 //reset light to original color
