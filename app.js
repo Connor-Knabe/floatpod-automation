@@ -33,9 +33,9 @@ app.get('/', function (req, res) {
 });
 
 app.post('/color', function (req, res) { 
-    logger.debug('body',req.body);
+    // logger.debug('body',req.body);
     try{
-        login.floatDevices[req.body['room_title']].lightStripColor = req.body['room_lighting_color'];
+        // login.floatDevices[req.body['room_title']].lightStripColor = req.body['room_lighting_color'];
     } catch (ex){
         logger.error("failed to parse room_lighting_color", ex)
 
