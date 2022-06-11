@@ -1,7 +1,8 @@
 const got = require('got');
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
+const colorService = require('./colorService.js')();
 
 app.use(bodyParser.json())
 
@@ -34,12 +35,16 @@ app.get('/', function (req, res) {
 
 app.post('/color', function (req, res) { 
     // logger.debug('body',req.body);
+	var roomColor = null;
     try{
-        // login.floatDevices[req.body['room_title']].lightStripColor = req.body['room_lighting_color'];
+		roomColor = colorService.nearestColor(req.body['room_lighting_color']);
+        login.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
+		logger.info('color',login.floatDevices[req.body['room_title']].lightStripColor);
     } catch (ex){
-        logger.error("failed to parse room_lighting_color", ex)
-
+		logger.debug('req.body',req.body);
+        logger.error("failed to parse room_lighting_color", ex);
     }
+
     //wait until next light on event starts before updating light color
     res.send("OK");
     // res.send('welcome, ' + req.body.color)
