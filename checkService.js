@@ -27,7 +27,7 @@ module.exports = function(got,logger) {
               floatDevice.minutesInSession = 1;
             } else if (floatDevice.minutesInSession >= 0 && floatDevice.minutesInSession <= 0) {
               logger.info(`${deviceName}: turning fan off 0 mins into active session`);
-              //await lightFanService.lightOnOffPreSessionTimer(deviceName, floatDevice);
+            //   await lightFanService.lightOnOffPreSessionTimer(deviceName, floatDevice);
               await got.get(floatDevice.fanOffUrl);
               floatDevice.minutesInSession = 1
             }
@@ -44,7 +44,7 @@ module.exports = function(got,logger) {
           if(floatDevice.minutesInSession==0){
             floatDevice.isNewSession = false;
             logger.info(`${deviceName}: turning fan off when in new session screen`);
-            //await lightFanService.lightOnOffPreSessionTimer(deviceName, floatDevice);
+            // await lightFanService.lightOnOffPreSessionTimer(deviceName, floatDevice);
             await got.get(floatDevice.fanOffUrl);
             floatDevice.minutesInSession = 1;
           }
