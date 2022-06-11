@@ -1,19 +1,19 @@
 module.exports = function(got,logger) {
     async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice){
-        logger.debug("turnLightAndFanOnOffTimer", floatDevice, deviceName);
+        logger.debug("turnLightAndFanOnOffTimer", deviceName);
 
         await got.get(floatDevice.fanOnUrl);
         //turn light on
         // await got.get(floatDevice.lightOnUrl);
 
-        clearTimeout(floatDevice.fanTimeout);
+        clearTimeout(floatDevice.postSessionLightFanTimeout);
         floatDevice.postSessionLightFanTimeout = setTimeout(async () => {
             logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins}`);
             await got.get(floatDevice.fanOffUrl);
             //reset light to original color
             //got.get(floatDevice.lightOffUrl);
 
-            }, floatDevice.fanTimeoutMins * 60 * 1000)
+            }, floatDevice.postSessionLightFanTimeoutMins * 60 * 1000)
         // }, 0 * 60 * 1000)
     }
 
@@ -29,7 +29,7 @@ module.exports = function(got,logger) {
                 //reset light to original color
                 //got.get(floatDevice.lightOffUrl);
 
-                }, floatDevice.preSessionLightTimeout * 60 * 1000)
+                }, floatDevice.preSessionLightTimeoutMins * 60 * 1000)
             }
     }
       return {
