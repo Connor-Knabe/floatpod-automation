@@ -8,7 +8,7 @@ app.use(bodyParser.json())
 var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
-logger.level = 'info';
+logger.level = 'debug';
 logger.info("FloatPod automation start");
 logger.error("FloatPod automation error start");
 
@@ -31,6 +31,7 @@ app.get('/', function (req, res) {
 });
 
 app.post('/color', function (req, res) { 
+  logger.debug('body',req.body);
   try{
     login.floatDevices[req.body['room_title']].lightStripColor = req.body['room_lighting_color'];
   } catch (ex){
