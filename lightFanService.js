@@ -1,6 +1,6 @@
 module.exports = function(got,logger) {
     async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice){
-        logger.debug("turnLightAndFanOnOffTimer");
+        logger.debug("turnLightAndFanOnOffTimer", floatDevice, deviceName);
 
         await got.get(floatDevice.fanOnUrl);
         //turn light on
@@ -17,7 +17,7 @@ module.exports = function(got,logger) {
         // }, 0 * 60 * 1000)
     }
 
-    async function lightOnOffPreSessionTimer(floatDevice){
+    async function lightOnOffPreSessionTimer(deviceName, floatDevice){
         if(floatDevice.lightsOnPreFloat){
             //floatDevice.lightStripColor
 
