@@ -1,6 +1,5 @@
 module.exports = function(got,logger) {
         const lightFanService = require('./lightFanService.js')(got,logger);
-
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
             logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
             const deviceNewSession = floatStatus.status == 1;
@@ -39,7 +38,7 @@ module.exports = function(got,logger) {
                 }
         
             } else if (deviceNewSession){
-                checkForOverNightSession(floatDevice);
+                checkForOverNightSession(deviceName, floatDevice);
                 //only want to turn off fan once when in new session screen
                 if(floatDevice.minutesInSession==0){
                     floatDevice.isNewSession = false;
@@ -54,17 +53,17 @@ module.exports = function(got,logger) {
                 floatDevice.minutesInSession = 0;
             }
         }
-        async function checkForOverNightSession(floatDevice){
+        async function checkForOverNightSession(deviceName, floatDevice){
             const theTime = new Date();
             if(theTime.getHours() >= 0 && theTime.getHours() < 7){
-                    //send request to take out of session
-                    logger.info(`${deviceName}: taking out of session overnight`);
-                    await got.post(floatDevice.url, {
-                            form:{
-                                    "api_key": login.apiKey,
-                                    "command":"set_session_cancel"
-                            }
-                    });
+                //send request to take out of session
+                logger.info(`${deviceName}: taking out of session overnight`);
+                await got.post(floatDevice.url, {
+                    form:{
+                        "api_key": login.apiKey,
+                        "command":"set_session_cancel"
+                    }
+                });
             } 
         }
         return {
