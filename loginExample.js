@@ -6,14 +6,14 @@ module.exports.floatDevices = {
         minutesInSession:0,
         fanOnUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
         fanOffUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
-        // lightOnUrl:'',
-        // lightOffUrl:'',
-        isNewSession: true,
+        lightOnUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
+        lightOffUrl:'https://maker.ifttt.com/trigger/asdfasdfasdf/with/key/asdfasdfasdf',
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
-        preSessionLightTimeout: null,
-        preSessionLightTimeoutMins: 7,
         lightStripColor: "hexValue",
-        lightsOnPreFloat: false
+        lightsOnPreFloat: false,
+        minsSincePreFloatLightOn: 0,
+        needToTurnOffPreFloatLight: true,
+        preFloatLightOnMins: 7
     }
 }
