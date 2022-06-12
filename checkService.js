@@ -1,4 +1,4 @@
-module.exports = function(got,logger) {
+module.exports = function(got,logger, apiKey) {
         const lightFanService = require('./lightFanService.js')(got,logger);
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
             logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
@@ -60,7 +60,7 @@ module.exports = function(got,logger) {
                 logger.info(`${deviceName}: taking out of session overnight`);
                 await got.post(floatDevice.url, {
                     form:{
-                        "api_key": login.apiKey,
+                        "api_key": apiKey,
                         "command":"set_session_cancel"
                     }
                 });
