@@ -2,9 +2,7 @@ module.exports = function(got,logger) {
 
     async function turnLightOn(deviceName, floatDevice){
         logger.info(`turning ${deviceName} light on`)
-        await got.get(floatDevice.lightOnUrl);
-        floatDevice.needToTurnOffPreFloatLight = true;
-    }
+        await got.get(floatDevice.lightOnUrl);    }
 
     async function turnLightOff(deviceName, floatDevice){
         logger.info(`turning ${deviceName} light off`)
