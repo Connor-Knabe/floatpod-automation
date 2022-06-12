@@ -56,14 +56,19 @@ module.exports = function(got,logger, apiKey) {
         async function checkForOverNightSession(deviceName, floatDevice){
             const theTime = new Date();
             if(theTime.getHours() >= 0 && theTime.getHours() < 7){
-                //send request to take out of session
-                logger.info(`${deviceName}: taking out of session overnight`);
-                await got.post(floatDevice.url, {
-                    form:{
-                        "api_key": apiKey,
-                        "command":"set_session_cancel"
-                    }
-                });
+                if(floatDevice.minutesInSession > 5){
+                    //send request to take out of session
+                    logger.info(`${deviceName}: taking out of session overnight`);
+                    await got.post(floatDevice.url, {
+                        form:{
+                            "api_key": apiKey,
+                            "command":"set_session_cancel"
+                        }
+                    });
+                } else {
+                    floatDevice.minutesInSession++;
+                }
+                
             } 
         }
         return {
