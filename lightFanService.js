@@ -1,10 +1,26 @@
 module.exports = function(got,logger) {
+
+    async function turnLightOn(deviceName, floatDevice){
+        logger.info(`turning ${deviceName} light on`)
+        await got.get(floatDevice.lightOnUrl);
+        floatDevice.needToTurnOffPreFloatLight = true;
+    }
+
+    async function turnLightOff(deviceName, floatDevice){
+        logger.info(`turning ${deviceName} light off`)
+        await got.get(floatDevice.lightOffUrl);
+        floatDevice.needToTurnOffPreFloatLight = false;
+    }
+
+
+
     async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice){
         logger.debug("turnLightAndFanOnOffTimer", deviceName);
-
+        floatDevice.needToTurnOffPreFloatLight = false;
+        
         await got.get(floatDevice.fanOnUrl);
         //turn light on
-        await got.get(floatDevice.lightOnUrl);
+        turnLightOn(deviceName, floatDevice);
 
         clearTimeout(floatDevice.postSessionLightFanTimeout);
         floatDevice.postSessionLightFanTimeout = setTimeout(async () => {
@@ -16,24 +32,9 @@ module.exports = function(got,logger) {
             }, floatDevice.postSessionLightFanTimeoutMins * 60 * 1000)
         // }, 0 * 60 * 1000)
     }
-
-    async function lightOnOffPreSessionTimer(deviceName, floatDevice){
-        if(floatDevice.lightsOnPreFloat){
-            //floatDevice.lightStripColor
-
-            logger.info(`${deviceName}: turning light on for ${floatDevice.preSessionLightTimeout}`);
-            clearTimeout(floatDevice.preSessionLightTimeout);
-            floatDevice.preSessionLightTimeout = setTimeout(async () => {
-                logger.info(`${deviceName}: turning light off after timeout ${floatDevice.preSessionLightTimeoutMins}`);
-                await got.get(floatDevice.lightOffUrl);
-                //reset light to original color
-                //got.get(floatDevice.lightOffUrl);
-
-                }, floatDevice.preSessionLightTimeoutMins * 60 * 1000)
-            }
-    }
       return {
 		lightAndFanOnOffPostSessionTimer: lightAndFanOnOffPostSessionTimer,
-        lightOnOffPreSessionTimer:lightOnOffPreSessionTimer
+        turnLightOn:turnLightOn,
+        turnLightOff:turnLightOff
       }
 };

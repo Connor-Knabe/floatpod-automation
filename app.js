@@ -14,7 +14,7 @@ logger.info("FloatPod automation start");
 logger.error("FloatPod automation error start");
 
 
-require('./cronService.js')(login,got,logger, login.apiKey);
+require('./cronService.js')(login,got,logger,login.apiKey);
 /*
  * Commands:
 "ping",
