@@ -37,7 +37,6 @@ module.exports = function(got,logger, apiKey) {
                     floatDevice.minutesInSession = -1;
                 }
             } else if (deviceNewSession){
-                await checkForOverNightSession(deviceName, floatDevice);
                 //only want to turn off fan once when in new session screen
                 logger.debug(`mins in session  now${floatDevice.minutesInSession}`);
                 if(floatDevice.minsSincePreFloatLightOn > floatDevice.preFloatLightOnMins && floatDevice.needToTurnOffPreFloatLight){
@@ -51,6 +50,8 @@ module.exports = function(got,logger, apiKey) {
                     await lightFanService.turnLightOn(deviceName, floatDevice);
                     floatDevice.minutesInSession = 1;
                 }
+                await checkForOverNightSession(deviceName, floatDevice);
+
             } else if (idleScreen) {
                 logger.debug(`${deviceName}: no session active screen.`);
                 floatDevice.minutesInSession = 0;
