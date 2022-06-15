@@ -37,9 +37,12 @@ app.post('/color', function (req, res) {
     // logger.debug('body',req.body);
 	var roomColor = null;
     try{
-		roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-        options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
-		logger.info('color',options.floatDevices[req.body['room_title']].lightStripColor);
+		if (req.body['room_title']=="Dream Cabin"){
+			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
+			options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
+			logger.info('color',options.floatDevices[req.body['room_title']].lightStripColor);
+		}
+
     } catch (ex){
 		logger.debug('req.body',req.body);
         logger.error("failed to parse room_lighting_color", ex);
