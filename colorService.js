@@ -1,4 +1,4 @@
-module.exports = function(login){
+module.exports = function(options){
     const baseColors = [
         {
           "hex": "#FFFFFF",
@@ -80,7 +80,7 @@ module.exports = function(login){
                 
             })
         } else{
-            baseColors = login.defaultColor;
+            baseColors = options.defaultColor;
         }
 
         return baseColors[index];

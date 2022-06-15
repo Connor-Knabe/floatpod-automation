@@ -1,4 +1,4 @@
-module.exports = function(login,got,logger, apiKey) {
+module.exports = function(options,got,logger, apiKey) {
     const checkService = require('./checkService.js')(got,logger, apiKey);
     const cron = require('cron').CronJob;
     var job = new cron(
@@ -6,14 +6,14 @@ module.exports = function(login,got,logger, apiKey) {
         //debug
         // '* * * * * *',
         async () => {
-            for (var key in login.floatDevices) {
-                if (login.floatDevices.hasOwnProperty(key)) {
-                var floatDevice = login.floatDevices[key];
+            for (var key in options.floatDevices) {
+                if (options.floatDevices.hasOwnProperty(key)) {
+                var floatDevice = options.floatDevices[key];
                 try{
 
-                    const data = await got.post(login.floatDevices[key].url, {
+                    const data = await got.post(options.floatDevices[key].url, {
                         form:{
-                        "api_key": login.apiKey,
+                        "api_key": options.apiKey,
                         "command":"get_session_status"
                         }
                     });

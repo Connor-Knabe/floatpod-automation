@@ -2,8 +2,8 @@ const got = require('got');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-var login = require('./login');
-const colorService = require('./colorService.js')(login);
+var options = require('./options');
+const colorService = require('./colorService.js')(options);
 
 app.use(bodyParser.json())
 
@@ -14,7 +14,7 @@ logger.info("FloatPod automation start");
 logger.error("FloatPod automation error start");
 
 
-require('./cronService.js')(login,got,logger,login.apiKey);
+require('./cronService.js')(options,got,logger,options.apiKey);
 /*
  * Commands:
 "ping",
@@ -38,8 +38,8 @@ app.post('/color', function (req, res) {
 	var roomColor = null;
     try{
 		roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-        login.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
-		logger.info('color',login.floatDevices[req.body['room_title']].lightStripColor);
+        options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
+		logger.info('color',options.floatDevices[req.body['room_title']].lightStripColor);
     } catch (ex){
 		logger.debug('req.body',req.body);
         logger.error("failed to parse room_lighting_color", ex);
