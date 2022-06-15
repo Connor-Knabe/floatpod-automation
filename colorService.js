@@ -69,6 +69,8 @@ module.exports = function(options){
         var lowest = Number.POSITIVE_INFINITY;
         var tmp;
         let index = 0;
+
+        var colorObj = null;
         
         if (colorHex){
             baseColors.forEach( (el, i) => {
@@ -79,11 +81,13 @@ module.exports = function(options){
                 };
                 
             })
+
+            colorObj = baseColors[index]
         } else{
-            baseColors = options.defaultColor;
+            colorObj = options.defaultColor;
         }
 
-        return baseColors[index];
+        return colorObj;
       }
       return {
         nearestColor: nearestColor
