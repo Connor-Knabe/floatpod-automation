@@ -1,3 +1,5 @@
+const { Logger } = require("log4js");
+
 module.exports = function(options){
     const baseColors = [
         {
@@ -40,8 +42,8 @@ module.exports = function(options){
         {
           "hex": "#ee82ee",
           "name": "Purple",
-        },
-      ]
+        }
+      ];
       
       // from https://stackoverflow.com/a/5624139
       function hexToRgb(hex) {
@@ -66,13 +68,14 @@ module.exports = function(options){
       
       // return nearest color from array
       function nearestColor(colorHex){
+        console.log('colorhex',nearestColor);
         var lowest = Number.POSITIVE_INFINITY;
         var tmp;
         let index = 0;
 
         var colorObj = null;
         
-        if (colorHex){
+        if (colorHex != null){
             baseColors.forEach( (el, i) => {
                 tmp = distance(hexToRgb(colorHex), hexToRgb(el.hex))
                 if (tmp < lowest) {
@@ -81,12 +84,12 @@ module.exports = function(options){
                 };
                 
             })
-
             colorObj = baseColors[index]
         } else{
             colorObj = options.defaultColor;
         }
 
+        console.log('colorobj', colorObj);
         return colorObj;
       }
       return {
