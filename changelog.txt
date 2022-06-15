@@ -1,3 +1,5 @@
+v0.0.5 - turns fan and lights on when music plays before end session 
+v0.0.4 - turns light on
 v0.0.3 - working on light automation
 v0.0.2 - refactor into smaller files
 v0.0.1 - does fan automation

@@ -7,10 +7,12 @@ module.exports = function(got,logger, apiKey) {
             const idleScreen = floatStatus.status == 0;
            
             if(deviceActiveSession){
-                const minsTillSessionEnds = floatStatus.duration/60 - 5;
+                const minsToPlayMusicBeforeEndSession = floatStatus.music_pre_end > 5 ? floatStatus.music_pre_end : 5;
+                const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession;
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
         
                 logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
+                logger.debug(`${deviceName}: music will play ${floatDevice.minutesInSession} mins before session over`);
                 logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
