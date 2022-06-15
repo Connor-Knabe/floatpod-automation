@@ -37,7 +37,7 @@ app.post('/color', function (req, res) {
     // logger.debug('body',req.body);
 	var roomColor = null;
     try{
-		roomColor = colorService.nearestColor(req.body['room_lighting_color']);
+		roomColor = req.body['room_lighting_color'] ? colorService.nearestColor(req.body['room_lighting_color']) : "Orange";
         login.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
 		logger.info('color',login.floatDevices[req.body['room_title']].lightStripColor);
     } catch (ex){

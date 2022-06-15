@@ -2,7 +2,8 @@ module.exports = function(got,logger) {
 
     async function turnLightOn(deviceName, floatDevice){
         logger.info(`turning ${deviceName} light on`)
-        await got.get(floatDevice.lightColorDefaultUrl);
+        const deviceColor = floatDevice.lightStripColorUrl;
+        await got.get(floatDevice.lightStripColorUrl[deviceColor]);
         await got.get(floatDevice.lightOnUrl);    
     }
 
