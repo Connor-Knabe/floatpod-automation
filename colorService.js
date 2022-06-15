@@ -68,7 +68,7 @@ module.exports = function(options){
       
       // return nearest color from array
       function nearestColor(colorHex){
-        console.log('colorhex',nearestColor);
+        console.log('colorhex',colorHex);
         var lowest = Number.POSITIVE_INFINITY;
         var tmp;
         let index = 0;
