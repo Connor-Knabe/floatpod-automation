@@ -12,7 +12,7 @@ module.exports = function(got,logger, apiKey) {
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
         
                 logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
-                logger.debug(`${deviceName}: music will play ${floatDevice.minutesInSession} mins before session over`);
+                logger.debug(`${deviceName}: music will play ${minsToPlayMusicBeforeEndSession} mins before session over`);
                 logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
