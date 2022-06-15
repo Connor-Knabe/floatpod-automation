@@ -1,7 +1,7 @@
 module.exports = function(options){
     const baseColors = [
         {
-          "hex": "#FFFFFF",
+          "hex": "255,255,255",
           "name": "White",
         },
         {
@@ -9,36 +9,36 @@ module.exports = function(options){
           "name": "Black",
         },
         {
-          "hex": "#808080",
+          "hex": "255,255,255",
           "name": "White",
         },
         
         {
-          "hex": "#ff0000",
+          "hex": "255,0,0",
           "name": "Red",
         },
         {
-          "hex": "#ffa500",
+          "hex": "255,127,0",
           "name": "Orange",
         },
         {
-          "hex": "#ffff00",
+          "hex": "255,255,0",
           "name": "Yellow",
         },
         {
-          "hex": "#008000",
+          "hex": "0,255,0",
           "name": "Green",
         },
         {
-          "hex": "#0000ff",
+          "hex": "0,0,255",
           "name": "Blue",
         },
         {
-          "hex": "#4b0082",
+          "hex": "#0,255,255",
           "name": "Indigo",
         },
         {
-          "hex": "#ee82ee",
+          "hex": "139,0,255",
           "name": "Purple",
         }
       ];
@@ -90,7 +90,19 @@ module.exports = function(options){
         console.log('colorobj', colorObj);
         return colorObj;
       }
+
+
+      function hexToRgb(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      };
+
       return {
+        hexToRgb:hexToRgb,
         nearestColor: nearestColor
     }
 };

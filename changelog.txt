@@ -1,3 +1,4 @@
+v1.0.0 - working on RGB values for changing check-in color
 v0.0.5 - turns fan and lights on when music plays before end session.  Need to refactor color code to make more modular for all rooms
 v0.0.4 - turns light on
 v0.0.3 - working on light automation
