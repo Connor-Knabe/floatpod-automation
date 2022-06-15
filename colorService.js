@@ -1,5 +1,3 @@
-const { Logger } = require("log4js");
-
 module.exports = function(options){
     const baseColors = [
         {

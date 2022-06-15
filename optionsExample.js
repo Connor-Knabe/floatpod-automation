@@ -1,5 +1,8 @@
 module.exports.apiKey = 'dreampodAPIKeyHere';
-
+module.exports.defaultColor = {
+    "hex": "#ffa500",
+    "name": "Orange",
+};
 module.exports.floatDevices = {
     "Dream Cabin":{
         url:'http://ipaddressgoeshere/api',

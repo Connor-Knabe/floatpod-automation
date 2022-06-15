@@ -2,7 +2,7 @@ const got = require('got');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-var options = require('./options');
+var options = require('./options.js');
 const colorService = require('./colorService.js')(options);
 
 app.use(bodyParser.json())
