@@ -2,11 +2,11 @@ const got = require('got');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const colorService = require('./colorService.js')();
+var login = require('./login');
+const colorService = require('./colorService.js')(login);
 
 app.use(bodyParser.json())
 
-var login = require('./login');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = 'debug';
@@ -37,7 +37,7 @@ app.post('/color', function (req, res) {
     // logger.debug('body',req.body);
 	var roomColor = null;
     try{
-		roomColor = req.body['room_lighting_color'] ? colorService.nearestColor(req.body['room_lighting_color']) : "Orange";
+		roomColor = colorService.nearestColor(req.body['room_lighting_color']);
         login.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
 		logger.info('color',login.floatDevices[req.body['room_title']].lightStripColor);
     } catch (ex){

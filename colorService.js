@@ -1,4 +1,4 @@
-module.exports = function(){
+module.exports = function(login){
     const baseColors = [
         {
           "hex": "#FFFFFF",
@@ -69,14 +69,20 @@ module.exports = function(){
         var lowest = Number.POSITIVE_INFINITY;
         var tmp;
         let index = 0;
-        baseColors.forEach( (el, i) => {
-            tmp = distance(hexToRgb(colorHex), hexToRgb(el.hex))
-            if (tmp < lowest) {
-              lowest = tmp;
-              index = i;
-            };
-            
-        })
+        
+        if (colorHex){
+            baseColors.forEach( (el, i) => {
+                tmp = distance(hexToRgb(colorHex), hexToRgb(el.hex))
+                if (tmp < lowest) {
+                  lowest = tmp;
+                  index = i;
+                };
+                
+            })
+        } else{
+            baseColors = login.defaultColor;
+        }
+
         return baseColors[index];
       }
       return {
