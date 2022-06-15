@@ -15,9 +15,9 @@ module.exports = function(got,logger, apiKey) {
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
                 if(activeSessionNonLast5Min){
-                    if(floatDevice.minsSincePreFloatLightOn > floatDevice.preFloatLightOnMins && floatDevice.needToTurnOffPreFloatLight){
-                        lightFanService.turnLightOff(deviceName, floatDevice);
-                    }
+                    // if(floatDevice.minsSincePreFloatLightOn > floatDevice.preFloatLightOnMins && floatDevice.needToTurnOffPreFloatLight){
+                    //     lightFanService.turnLightOff(deviceName, floatDevice);
+                    // }
                     if(floatDevice.minutesInSession >= minsTillSessionEnds){
                         logger.info(`${deviceName}: turning light and fan on end of session`);
                         await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
@@ -25,8 +25,8 @@ module.exports = function(got,logger, apiKey) {
                     } else if (floatDevice.minutesInSession == 0) {
                         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                         await got.get(floatDevice.fanOffUrl);
+                        lightFanService.turnLightOff(deviceName, floatDevice);
                         floatDevice.needToTurnOffPreFloatLight = true;
-                        await lightFanService.turnLightOn(deviceName, floatDevice);
                         floatDevice.minutesInSession = 1
                     }
                     floatDevice.minutesInSession++;
@@ -46,8 +46,8 @@ module.exports = function(got,logger, apiKey) {
                 if(floatDevice.minutesInSession==0){
                     logger.info(`${deviceName}: turning fan off when in new session screen`);
                     await got.get(floatDevice.fanOffUrl);
+                    lightFanService.turnLightOff(deviceName, floatDevice);
                     floatDevice.needToTurnOffPreFloatLight = true;
-                    await lightFanService.turnLightOn(deviceName, floatDevice);
                     floatDevice.minutesInSession = 1;
                 }
                 await checkForOverNightSession(deviceName, floatDevice);
