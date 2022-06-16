@@ -14,7 +14,7 @@ logger.info("FloatPod automation start");
 logger.error("FloatPod automation error start");
 
 
-require('./cronService.js')(options,got,logger,options.apiKey);
+require('./cronService.js')(options,got,logger);
 /*
  * Commands:
 "ping",
@@ -36,11 +36,16 @@ app.get('/', function (req, res) {
 app.post('/color', function (req, res) { 
     // logger.debug('body',req.body);
 	var roomColor = null;
+	var rgbColor = null;
+	logger.debug('req',req.body);
     try{
 		if (req.body['room_title']=="Dream Cabin"){
-			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-			options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
-			logger.info('color',options.floatDevices[req.body['room_title']].lightStripColor);
+			// roomColor = colorService.nearestColor(req.body['room_lighting_color']);
+			// options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
+			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
+			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
+			options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
+			logger.info('color',options.floatDevices[req.body['room_title']].lightStripRGBColor);
 		}
 
     } catch (ex){

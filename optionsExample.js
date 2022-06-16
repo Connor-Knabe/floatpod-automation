@@ -31,8 +31,6 @@ module.exports.floatDevices = {
             "Black":'https://maker.ifttt.com/trigger/floatroom_light_off/with/key/APIKEYGOESHERE',
         },
         lightsOnPreFloat: false,
-        minsSincePreFloatLightOn: 0,
-        needToTurnOffPreFloatLight: true,
         preFloatLightOnMins: 7
     }
 }

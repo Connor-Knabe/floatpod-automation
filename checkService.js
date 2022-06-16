@@ -1,5 +1,5 @@
-module.exports = function(got,logger, apiKey) {
-        const lightFanService = require('./lightFanService.js')(got,logger);
+module.exports = function(got,logger,options) {
+        const lightFanService = require('./lightFanService.js')(got,logger,options);
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
             logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
             const deviceNewSession = floatStatus.status == 1;
@@ -17,22 +17,19 @@ module.exports = function(got,logger, apiKey) {
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
                 if(activeSessionNonLast5Min){
-                    // if(floatDevice.minsSincePreFloatLightOn > floatDevice.preFloatLightOnMins && floatDevice.needToTurnOffPreFloatLight){
-                    //     lightFanService.turnLightOff(deviceName, floatDevice);
-                    // }
+
                     if(floatDevice.minutesInSession >= minsTillSessionEnds){
                         logger.info(`${deviceName}: turning light and fan on end of session`);
                         await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
                         floatDevice.minutesInSession = 1;
                     } else if (floatDevice.minutesInSession == 0) {
                         logger.info(`${deviceName}: turning fan off 0 mins into active session`);
-                        await got.get(floatDevice.fanOffUrl);
+                        // await got.get(floatDevice.fanOffUrl);
+                        lightFanService.turnFanOff(deviceName, floatDevice);
                         lightFanService.turnLightOff(deviceName, floatDevice);
-                        floatDevice.needToTurnOffPreFloatLight = true;
                         floatDevice.minutesInSession = 1
                     }
                     floatDevice.minutesInSession++;
-                    floatDevice.minsSincePreFloatLightOn++;
                 } else if(floatDevice.minutesInSession > -1){
                     logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
@@ -41,15 +38,11 @@ module.exports = function(got,logger, apiKey) {
             } else if (deviceNewSession){
                 //only want to turn off fan once when in new session screen
                 logger.debug(`mins in session  now${floatDevice.minutesInSession}`);
-                if(floatDevice.minsSincePreFloatLightOn > floatDevice.preFloatLightOnMins && floatDevice.needToTurnOffPreFloatLight){
-                    lightFanService.turnLightOff(deviceName, floatDevice);
-                }
-                floatDevice.minsSincePreFloatLightOn++;
                 if(floatDevice.minutesInSession==0){
                     logger.info(`${deviceName}: turning fan off when in new session screen`);
-                    await got.get(floatDevice.fanOffUrl);
+                    // await got.get(floatDevice.fanOffUrl);
+                    lightFanService.turnFanOff(deviceName, floatDevice);
                     lightFanService.turnLightOff(deviceName, floatDevice);
-                    floatDevice.needToTurnOffPreFloatLight = true;
                     floatDevice.minutesInSession = 1;
                 }
                 await checkForOverNightSession(deviceName, floatDevice);
@@ -57,8 +50,6 @@ module.exports = function(got,logger, apiKey) {
             } else if (idleScreen) {
                 logger.debug(`${deviceName}: no session active screen.`);
                 floatDevice.minutesInSession = 0;
-                floatDevice.minsSincePreFloatLightOn = 0;
-                floatDevice.needToTurnOffPreFloatLight = true;
             }
         }
         async function checkForOverNightSession(deviceName, floatDevice){
@@ -70,7 +61,7 @@ module.exports = function(got,logger, apiKey) {
                     logger.info(`${deviceName}: taking out of session overnight`);
                     await got.post(floatDevice.url, {
                         form:{
-                            "api_key": apiKey,
+                            "api_key": options.apiKey,
                             "command":"set_session_cancel"
                         }
                     });
