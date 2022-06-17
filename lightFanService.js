@@ -2,11 +2,6 @@ const { urlencoded } = require("body-parser");
 
 module.exports = function (got, logger, options) {
     async function turnLightOn(deviceName, floatDevice) {
-        logger.info(`turning ${deviceName} light on`)
-        await setLightColor(deviceName, floatDevice);
-    }
-
-    async function setLightColor(deviceName, floatDevice) {
         var rgbColor = floatDevice.lightStripRGBColor ? floatDevice.lightStripRGBColor : options.defaultRGBColor;
         logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
         const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorRGB);
@@ -59,7 +54,6 @@ module.exports = function (got, logger, options) {
     return {
         lightAndFanOnOffPostSessionTimer: lightAndFanOnOffPostSessionTimer,
         turnLightOff: turnLightOff,
-        turnFanOff: turnFanOff,
-        setLightColor:setLightColor
+        turnFanOff: turnFanOff
     }
 };
