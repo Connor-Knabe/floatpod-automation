@@ -1,7 +1,7 @@
 module.exports = function(options){
     const baseColors = [
         {
-          "hex": "255,255,255",
+          "hex": "#FFFFFF",
           "name": "White",
         },
         {
@@ -9,38 +9,38 @@ module.exports = function(options){
           "name": "Black",
         },
         {
-          "hex": "255,255,255",
+          "hex": "#808080",
           "name": "White",
         },
         
         {
-          "hex": "255,0,0",
+          "hex": "#ff0000",
           "name": "Red",
         },
         {
-          "hex": "255,127,0",
+          "hex": "#ffa500",
           "name": "Orange",
         },
         {
-          "hex": "255,255,0",
+          "hex": "#ffff00",
           "name": "Yellow",
         },
         {
-          "hex": "0,255,0",
+          "hex": "#008000",
           "name": "Green",
         },
         {
-          "hex": "0,0,255",
+          "hex": "#0000ff",
           "name": "Blue",
         },
         {
-          "hex": "#0,255,255",
+          "hex": "#4b0082",
           "name": "Indigo",
         },
         {
-          "hex": "139,0,255",
+          "hex": "#ee82ee",
           "name": "Purple",
-        }
+        },
       ];
       
       // from https://stackoverflow.com/a/5624139
