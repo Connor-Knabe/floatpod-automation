@@ -17,9 +17,6 @@ logger.error("FloatPod automation error start");
 require('./cronService.js')(options,got,logger);
 
 
-const lightFanService = require('./lightFanService.js')(got,logger,options);
-
-lightFanService.setCustomLightColor('Dream Cabin',options.floatDevices['Dream Cabin'])
 /*
  * Commands:
 "ping",
@@ -39,28 +36,23 @@ app.get('/', function (req, res) {
 });
 
 app.post('/color', function (req, res) { 
-    // logger.debug('body',req.body);
 	var roomColor = null;
 	var rgbColor = null;
 	logger.debug('req',req.body);
     try{
 		if (req.body['room_title']=="Dream Cabin"){
-			// roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-			// options.floatDevices[req.body['room_title']].lightStripColor = roomColor.name;
+			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
 			options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
-			logger.info('color',options.floatDevices[req.body['room_title']].lightStripRGBColor);
+			logger.info(`Color is ${roomColor.name} RGB: ${options.floatDevices[req.body['room_title']].lightStripRGBColor}`);
 		}
 
     } catch (ex){
 		logger.debug('req.body',req.body);
         logger.error("failed to parse room_lighting_color", ex);
     }
-
-    //wait until next light on event starts before updating light color
     res.send("OK");
-    // res.send('welcome, ' + req.body.color)
 });
 
 app.listen(2336);

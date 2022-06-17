@@ -3,22 +3,11 @@ const { urlencoded } = require("body-parser");
 module.exports = function (got, logger, options) {
     async function turnLightOn(deviceName, floatDevice) {
         logger.info(`turning ${deviceName} light on`)
-        // const deviceColor = floatDevice.lightStripColorUrl;
-        // await got.get(floatDevice.lightStripColorUrl[deviceColor]);
-        // setCustomLightColor(deviceName, floatDevice);
-
-        setCustomLightColor(deviceName, floatDevice);
-        // const lightOnUrl = generateIftttURL(floatDevice,options.ifttt.event.lightOn);
-        // await got.get(lightOnUrl);    
-
-        // await got.get(floatDevice.lightOnUrl);    
+        await setLightColor(deviceName, floatDevice);
     }
 
-    async function setCustomLightColor(deviceName, floatDevice) {
-        // const deviceColor = floatDevice.lightStripColorUrl;
-        // await got.get(floatDevice.lightStripColorUrl[deviceColor]);
+    async function setLightColor(deviceName, floatDevice) {
         var rgbColor = floatDevice.lightStripRGBColor ? floatDevice.lightStripRGBColor : options.defaultRGBColor;
-
         logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
         const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorRGB);
         await got.post(lightColorUrl, {
@@ -26,24 +15,14 @@ module.exports = function (got, logger, options) {
                 value1: rgbColor
             }
         });
-        // await got.get(floatDevice.lightOnUrl);    
-    }
-
-    async function setDefaultLightColor(deviceName, floatDevice) {
-        logger.info(`turning ${deviceName} light to color ${floatDevice.lightStripRGBColor}`)
-        // const deviceColor = floatDevice.lightStripColorUrl;
-        // await got.get(floatDevice.lightStripColorUrl[deviceColor]);
-        const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorDefault);
-        await got.get(lightColorUrl);
+        floatDevice.lightStripRGBColor = null;
     }
 
     async function turnLightOff(deviceName, floatDevice) {
         logger.info(`turning ${deviceName} light off`)
-
         const lightOffUrl = generateIftttURL(floatDevice, options.ifttt.event.lightOff);
         await got.get(lightOffUrl);
         clearTimeout(floatDevice.postSessionLightFanTimeout);
-        // await got.get(floatDevice.lightOffUrl);
     }
 
     async function turnFanOn(deviceName, floatDevice) {
@@ -62,29 +41,14 @@ module.exports = function (got, logger, options) {
     async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice) {
         logger.debug("turnLightAndFanOnOffTimer", deviceName);
         await turnFanOn(deviceName, floatDevice);
-        // await got.get(floatDevice.fanOnUrl);
-        //turn light on
-        turnLightOn(deviceName, floatDevice);
+        await turnLightOn(deviceName, floatDevice);
         clearTimeout(floatDevice.postSessionLightFanTimeout);
         floatDevice.postSessionLightFanTimeout = setTimeout(async () => {
             logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins}`);
-
-            turnFanOff(deviceName, floatDevice)
-            // await got.get(floatDevice.fanOffUrl);
-            //reset light to original color
-            // await got.get(floatDevice.lightColorDefaultUrl);
-            // await got.get(floatDevice.lightOffUrl);
-
-            floatDevice.lightStripRGBColor = null;
-            // await setCustomLightColor(deviceName, floatDevice);
-
+            await turnFanOff(deviceName, floatDevice)
             await turnLightOff(deviceName, floatDevice);
 
-            // const lightOffUrl = generateIftttURL(floatDevice,options.ifttt.event.lightOff);
-            // await got.get(lightOffUrl);    
-
         }, floatDevice.postSessionLightFanTimeoutMins * 60 * 1000)
-        // }, 0 * 60 * 1000)
     }
 
     function generateIftttURL(floatDevice, event) {
@@ -96,6 +60,6 @@ module.exports = function (got, logger, options) {
         lightAndFanOnOffPostSessionTimer: lightAndFanOnOffPostSessionTimer,
         turnLightOff: turnLightOff,
         turnFanOff: turnFanOff,
-        setCustomLightColor:setCustomLightColor
+        setLightColor:setLightColor
     }
 };

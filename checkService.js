@@ -18,7 +18,6 @@ module.exports = function(got,logger,options) {
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
                 if(activeSessionNonLast5Min){
-
                     if(floatDevice.minutesInSession >= minsTillSessionEnds){
                         logger.info(`${deviceName}: turning light and fan on end of session`);
                         await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
