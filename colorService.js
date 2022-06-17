@@ -86,7 +86,6 @@ module.exports = function(options){
             colorObj = options.defaultColor;
         }
 
-        console.log('colorobj', colorObj);
         return colorObj;
       }
 

@@ -66,9 +66,8 @@ module.exports = function(got,logger,options) {
                         }
                     });
                 } else {
-                    logger.debug(`else`)
                     floatDevice.minutesInSession++;
-                    logger.debug(`mins in session ${floatDevice.minutesInSession}`);
+                    logger.debug(`checkForOverNightSession mins in session ${floatDevice.minutesInSession}`);
                 }
                 
             } 

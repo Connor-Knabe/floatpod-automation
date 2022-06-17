@@ -40,11 +40,15 @@ app.post('/color', function (req, res) {
 	var rgbColor = null;
 	logger.debug('req',req.body);
     try{
-		if (req.body['room_title']=="Dream Cabin"){
+		if (req.body['room_title']=='Dream Cabin'){
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
-			options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
+			if(roomColor.name == 'Black'){
+				options.floatDevices[req.body['room_title']].lightStripRGBColor = '0,0,0';
+			} else {
+				options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
+			}
 			logger.info(`Color is ${roomColor.name} RGB: ${options.floatDevices[req.body['room_title']].lightStripRGBColor}`);
 		}
 

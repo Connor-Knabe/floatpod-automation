@@ -3,14 +3,19 @@ const { urlencoded } = require("body-parser");
 module.exports = function (got, logger, options) {
     async function turnLightOn(deviceName, floatDevice) {
         var rgbColor = floatDevice.lightStripRGBColor ? floatDevice.lightStripRGBColor : options.defaultRGBColor;
-        logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
-        const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorRGB);
-        await got.post(lightColorUrl, {
-            json: {
-                value1: rgbColor
-            }
-        });
-        floatDevice.lightStripRGBColor = null;
+        if(rgbColor != '0,0,0'){
+            logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
+            const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorRGB);
+            await got.post(lightColorUrl, {
+                json: {
+                    value1: rgbColor
+                }
+            });
+            floatDevice.lightStripRGBColor = null;
+        } else {
+            logger.info(`Not turning light on as it's set to black`);
+        }
+       
     }
 
     async function turnLightOff(deviceName, floatDevice) {
