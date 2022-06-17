@@ -14,6 +14,8 @@ module.exports = function (got, logger, options) {
             floatDevice.lightStripRGBColor = null;
         } else {
             logger.info(`Not turning light on as it's set to black`);
+            floatDevice.lightStripRGBColor = null;
+
         }
        
     }
