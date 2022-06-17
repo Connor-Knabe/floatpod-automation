@@ -1,36 +1,31 @@
 const { urlencoded } = require("body-parser");
 
 module.exports = function (got, logger, options) {
-
     async function turnLightOn(deviceName, floatDevice) {
         logger.info(`turning ${deviceName} light on`)
         // const deviceColor = floatDevice.lightStripColorUrl;
         // await got.get(floatDevice.lightStripColorUrl[deviceColor]);
         // setCustomLightColor(deviceName, floatDevice);
 
-        setDefaultLightColor(deviceName, floatDevice);
+        setCustomLightColor(deviceName, floatDevice);
         // const lightOnUrl = generateIftttURL(floatDevice,options.ifttt.event.lightOn);
         // await got.get(lightOnUrl);    
 
         // await got.get(floatDevice.lightOnUrl);    
     }
 
-
-
     async function setCustomLightColor(deviceName, floatDevice) {
         // const deviceColor = floatDevice.lightStripColorUrl;
         // await got.get(floatDevice.lightStripColorUrl[deviceColor]);
-        var rgbColor = floatDevice.lightStripRGBColor ? floatDevice.lightStripRGBColor : "255,127,0";
+        var rgbColor = floatDevice.lightStripRGBColor ? floatDevice.lightStripRGBColor : options.defaultRGBColor;
 
         logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
         const lightColorUrl = generateIftttURL(floatDevice, options.ifttt.event.lightColorRGB);
         await got.post(lightColorUrl, {
             json: {
-                "value1": `${floatDevice.lightStripRGBColor}`
+                value1: rgbColor
             }
-        }).json();
-
-
+        });
         // await got.get(floatDevice.lightOnUrl);    
     }
 
@@ -47,7 +42,7 @@ module.exports = function (got, logger, options) {
 
         const lightOffUrl = generateIftttURL(floatDevice, options.ifttt.event.lightOff);
         await got.get(lightOffUrl);
-
+        clearTimeout(floatDevice.postSessionLightFanTimeout);
         // await got.get(floatDevice.lightOffUrl);
     }
 
@@ -61,6 +56,7 @@ module.exports = function (got, logger, options) {
         logger.info(`turning ${deviceName} fan off`);
         const fanOffUrl = generateIftttURL(floatDevice, options.ifttt.event.fanOff);
         await got.get(fanOffUrl);
+        clearTimeout(floatDevice.postSessionLightFanTimeout);
     }
 
     async function lightAndFanOnOffPostSessionTimer(deviceName, floatDevice) {
@@ -93,15 +89,13 @@ module.exports = function (got, logger, options) {
 
     function generateIftttURL(floatDevice, event) {
         var url = options.ifttt.preUrl + floatDevice.iftttDeviceName + event + options.ifttt.postUrl;
-        logger.debug(url);
         return url;
     }
-
-
 
     return {
         lightAndFanOnOffPostSessionTimer: lightAndFanOnOffPostSessionTimer,
         turnLightOff: turnLightOff,
-        turnFanOff: turnFanOff
+        turnFanOff: turnFanOff,
+        setCustomLightColor:setCustomLightColor
     }
 };

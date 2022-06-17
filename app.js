@@ -15,6 +15,11 @@ logger.error("FloatPod automation error start");
 
 
 require('./cronService.js')(options,got,logger);
+
+
+const lightFanService = require('./lightFanService.js')(got,logger,options);
+
+lightFanService.setCustomLightColor('Dream Cabin',options.floatDevices['Dream Cabin'])
 /*
  * Commands:
 "ping",
