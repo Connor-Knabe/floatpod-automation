@@ -2,14 +2,14 @@ module.exports = function(got,logger,options) {
         const lightFanService = require('./lightFanService.js')(got,logger,options);
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
             logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
-            const deviceNewSession = floatStatus.status == 1;
+            const deviceNewSession = floatStatus.status == 1 || floatStatus.status == 2;
             const deviceActiveSession = floatStatus.status==3;
             const idleScreen = floatStatus.status == 0;
            
             if(deviceActiveSession){
                 const minsToPlayMusicBeforeEndSession = floatStatus.music_pre_end > 5 ? floatStatus.music_pre_end : 5;
                 //start automation 1 minute after music starts
-                const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1;
+                const minsTillSessionEnds = floatStatus.duration + floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1;
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
         
                 logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
