@@ -22,7 +22,7 @@ module.exports = function(options,got,logger) {
                         var floatStatus = data ? JSON.parse(data.body) : null;
                         floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
                     } catch (ex){
-                        logger.error(`${deviceName}: failed to parse float status response ${ex}`)
+                        logger.error(`${key}: failed to parse float status response ${ex}`)
                     }
         
                     
@@ -33,7 +33,7 @@ module.exports = function(options,got,logger) {
                 if(floatStatus){
                     checkService.checkFloatStatus(key,floatDevice,floatStatus);
                 } else {
-                    logger.error(`${deviceName}: couldn't find float status`);
+                    logger.error(`${key}: couldn't find float status`);
                 }
                 }
             }
