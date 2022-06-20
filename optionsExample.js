@@ -1,4 +1,5 @@
 module.exports.apiKey = 'dreampodAPIKeyHere';
+module.exports.webhookKey = 'asdfasdf';
 module.exports.defaultColor = {
     "hex": "#ffa500",
     "name": "Orange",

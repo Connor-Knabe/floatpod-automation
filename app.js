@@ -35,7 +35,7 @@ app.get('/', function (req, res) {
     res.send('200');
 });
 
-app.post('/color', function (req, res) { 
+app.post('/color-'+options.webhookKey, function (req, res) { 
 	var roomColor = null;
 	var rgbColor = null;
 	logger.debug('req',req.body);
