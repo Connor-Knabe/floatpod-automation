@@ -10,26 +10,13 @@ app.use(bodyParser.json())
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = options.loggerLevel;
-logger.info("FloatPod automation start");
-logger.error("FloatPod automation error start");
+logger.info("FloatPod automation start" + options.loggerLevel);
+logger.error("FloatPod automation error start" + options.loggerLevel);
 
 
 require('./cronService.js')(options,got,logger);
 
 
-/*
- * Commands:
-"ping",
-"get_water_temperature",
-"get_controller_temperature",
-"get_relay_status",
-"get_silence_status",
-"set_silence_on",
-"set_silence_off",
-"get_session_status",
-"set_session_start",
-"set_session_cancel",
-*/
 
 app.get('/', function (req, res) {
     res.send('200');

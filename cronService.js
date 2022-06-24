@@ -10,7 +10,19 @@ module.exports = function(options,got,logger) {
                 if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
                 try{
-
+                    /*
+                    * Commands:
+                    "ping",
+                    "get_water_temperature",
+                    "get_controller_temperature",
+                    "get_relay_status",
+                    "get_silence_status",
+                    "set_silence_on",
+                    "set_silence_off",
+                    "get_session_status",
+                    "set_session_start",
+                    "set_session_cancel",
+                    */
                     const data = await got.post(options.floatDevices[key].url, {
                         form:{
                         "api_key": options.apiKey,
