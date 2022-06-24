@@ -9,7 +9,7 @@ app.use(bodyParser.json())
 
 var log4js = require('log4js');
 var logger = log4js.getLogger();
-logger.level = 'info';
+logger.level = options.loggerLevel;
 logger.info("FloatPod automation start");
 logger.error("FloatPod automation error start");
 
