@@ -25,12 +25,12 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 	logger.debug('req',req.body);
     try{
 		//needs refactor 
-		if(req.body['room_lighting_color'] != null){
+		if(req.body['room_lighting_color'] != null && req.body['room_lighting_color'] != "null"){
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
 		}
-		
+
 		if(req.body['room_title']=='Infrared Sauna'){
 			if(roomColor && roomColor.name == 'Black'){
 				options.devices[req.body['room_title']].lightStripRGBColor = '0,0,0';
