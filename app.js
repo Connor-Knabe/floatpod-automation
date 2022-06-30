@@ -24,32 +24,28 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 	var rgbColor = null;
 	logger.debug('req',req.body);
     try{
-		if (req.body['room_title']=='Infrared Sauna'){
-
+		//needs refactor 
+		if(req.body['room_lighting_color'] != null){
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
-			if(roomColor.name == 'Black'){
-				options.devices['Infrared Sauna'].lightStripRGBColor = '0,0,0';
+		}
+		
+		if(req.body['room_title']=='Infrared Sauna'){
+			if(roomColor && roomColor.name == 'Black'){
+				options.devices[req.body['room_title']].lightStripRGBColor = '0,0,0';
 			} else {
-				options.devices['Infrared Sauna'].lightStripRGBColor = rgbColor;
+				options.devices[req.body['room_title']].lightStripRGBColor = rgbColor;
 			}
 			logger.info(`Color is ${roomColor.name} RGB: ${options.devices['Infrared Sauna'].lightStripRGBColor}`);
-
 			var sauna = options.devices['Infrared Sauna'];
 			lightFanService.turnLightOn('Infrared Sauna', sauna);
-
 			sauna.lightTimeout = setTimeout(async () => {
 				await lightFanService.turnLightOff('Infrared Sauna', sauna);
 				sauna.lightStripRGBColor = null;
 			}, sauna.lightOffAfterMins * 60 * 1000)
-
-
 		} else {
-			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
-			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
-			if(roomColor.name == 'Black'){
+			if(roomColor && roomColor.name == 'Black'){
 				options.floatDevices[req.body['room_title']].lightStripRGBColor = '0,0,0';
 			} else {
 				options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
@@ -57,6 +53,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			logger.info(`Color is ${roomColor.name} RGB: ${options.floatDevices[req.body['room_title']].lightStripRGBColor}`);
 		}
 
+		
     } catch (ex){
 		logger.debug('req.body',req.body);
         logger.error("failed to parse room_lighting_color", ex);
