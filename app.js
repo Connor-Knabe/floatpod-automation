@@ -37,7 +37,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			} else {
 				options.devices[req.body['room_title']].lightStripRGBColor = rgbColor;
 			}
-			if(roomColor){
+			if(roomColor != null){
 				logger.info(`Color is ${roomColor.name} RGB: ${options.devices['Infrared Sauna'].lightStripRGBColor}`);
 			} else {
 				logger.info(`Color wasn't set for sauna`);
@@ -54,7 +54,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			} else {
 				options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
 			}
-			if(roomColor){
+			if(roomColor != null){
 				logger.info(`Color is ${roomColor.name} RGB: ${options.floatDevices[req.body['room_title']].lightStripRGBColor}`);
 			} else {
 				logger.info(`Color wasn't set for ${req.body['room_title']}`);
