@@ -1,5 +1,5 @@
-module.exports = function(options,got,logger) {
-    const checkService = require('./checkService.js')(got,logger,options);
+module.exports = function(options,got,logger, lightFanService) {
+    const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     var job = new cron(
         '0 * * * * *',

@@ -12,11 +12,8 @@ var logger = log4js.getLogger();
 logger.level = options.loggerLevel;
 logger.info("FloatPod automation start" + options.loggerLevel);
 logger.error("FloatPod automation error start" + options.loggerLevel);
-
-
-require('./cronService.js')(options,got,logger);
-
-
+const lightFanService = require('./lightFanService.js')(got,logger,options);
+require('./cronService.js')(options,got,logger,lightFanService);
 
 app.get('/', function (req, res) {
     res.send('200');
@@ -27,7 +24,28 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 	var rgbColor = null;
 	logger.debug('req',req.body);
     try{
-		if (req.body['room_title']=='Dream Cabin'){
+		if (req.body['room_title']=='Infrared Sauna'){
+
+			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
+			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
+			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
+			if(roomColor.name == 'Black'){
+				options.devices['Infrared Sauna'].lightStripRGBColor = '0,0,0';
+			} else {
+				options.devices['Infrared Sauna'].lightStripRGBColor = rgbColor;
+			}
+			logger.info(`Color is ${roomColor.name} RGB: ${options.devices['Infrared Sauna'].lightStripRGBColor}`);
+
+			var sauna = options.devices['Infrared Sauna'];
+			lightFanService.turnLightOn('Infrared Sauna', sauna);
+
+			sauna.lightTimeout = setTimeout(async () => {
+				await lightFanService.turnLightOff('Infrared Sauna', sauna);
+				sauna.lightStripRGBColor = null;
+			}, sauna.lightOffAfterMins * 60 * 1000)
+
+
+		} else {
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;

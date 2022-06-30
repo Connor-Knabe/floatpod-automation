@@ -1,5 +1,4 @@
-module.exports = function(got,logger,options) {
-        const lightFanService = require('./lightFanService.js')(got,logger,options);
+module.exports = function(got,logger,options,lightFanService) {
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
             logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
             const deviceNewSession = floatStatus.status == 1 || floatStatus.status == 2;
