@@ -37,7 +37,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			} else {
 				options.devices[req.body['room_title']].lightStripRGBColor = rgbColor;
 			}
-			logger.debug('roomcolor',roomColor);
+			logger.debug('roomcolor is',roomColor);
 			if(roomColor != null){
 				logger.info(`Color is ${roomColor.name} RGB: ${options.devices['Infrared Sauna'].lightStripRGBColor}`);
 			} else {
