@@ -25,7 +25,12 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 	logger.debug('req',req.body);
     try{
 		//needs refactor 
-		if(req.body['room_lighting_color'] != null && req.body['room_lighting_color'] != "null"){
+		if(req.body['room_lighting_color']){
+			logger.debug("not null");
+		} else {
+			logger.debug("NULL");
+		}
+		if(req.body['room_lighting_color'] != null && req.body['room_lighting_color'] != "null" && req.body['room_lighting_color'] != ""){
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
 			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
 			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
