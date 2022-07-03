@@ -1,6 +1,6 @@
 module.exports = function(got,logger,options,lightFanService) {
         async function checkFloatStatus(deviceName,floatDevice,floatStatus){
-            logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
+            // logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
             const deviceNewSession = floatStatus.status == 1 || floatStatus.status == 2;
             const deviceActiveSession = floatStatus.status==3;
             const idleScreen = floatStatus.status == 0;
@@ -45,7 +45,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 await checkForOverNightSession(deviceName, floatDevice);
 
             } else if (idleScreen) {
-                logger.debug(`${deviceName}: no session active screen.`);
+                // logger.debug(`${deviceName}: no session active screen.`);
                 floatDevice.minutesInSession = 0;
             }
         }
