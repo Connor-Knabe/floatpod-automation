@@ -24,7 +24,7 @@ module.exports.floatDevices = {
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
-        healthCheckUrl:'https://hc-ping.com/38193a04-d6d6-4262-8eea-ae6c48e1e9ec'
+        healthCheckUrl:'URLHERE'
     },
     "Dream Pod 1":{
         url:'http://IPHERE/api',
@@ -33,7 +33,7 @@ module.exports.floatDevices = {
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
-        healthCheckUrl:'https://hc-ping.com/b8e5d846-e93b-4778-912a-3d67f1753186'
+        healthCheckUrl:'URLHERE'
 
     }
 }
