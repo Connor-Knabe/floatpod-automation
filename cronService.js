@@ -33,6 +33,7 @@ module.exports = function(options,got,logger, lightFanService) {
                     try {
                         var floatStatus = data ? JSON.parse(data.body) : null;
                         floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
+                        got.get(options.floatDevices[key].healthCheckUrl);
                     } catch (ex){
                         logger.error(`${key}: failed to parse float status response ${ex}`)
                     }

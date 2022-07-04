@@ -1,37 +1,48 @@
-module.exports.apiKey = 'dreampodAPIKeyHere';
-module.exports.webhookKey = 'asdfasdf';
-module.exports.defaultColor = {
-    "hex": "#ffa500",
-    "name": "Orange",
+module.exports.apiKey = 'API_KEY_GOES_HERE';
+module.exports.defaultRGBColor = '255,127,0';
+module.exports.webhookKey = 'WEBHOOK_KEY_GOES_HERE';
+module.exports.loggerLevel = 'debug';
+const iftttApiKey = 'IFTTT_API_KEY_GOES_HERE';
+module.exports.ifttt = {
+    preUrl:'https://maker.ifttt.com/trigger/',
+    postUrl:'/with/key/'+iftttApiKey,
+    event:{
+        fanOn:'_fan_on',
+        fanOff:'_fan_off',
+        lightOn:'_light_on',
+        lightOff:'_light_off',
+        lightColorDefault:'_light_default_color',
+        lightColorRGB:'_light_rgb_color',
+    }
 };
+
 module.exports.floatDevices = {
     "Dream Cabin":{
-        url:'http://ipaddressgoeshere/api',
+        url:'http://IPHERE/api',
+        iftttDeviceName:"cabin",
         minutesInSession:0,
-        fanOnUrl:'https://maker.ifttt.com/trigger/turn_floatroom_fan_on/with/key/APIKEYGOESHERE',
-        fanOffUrl:'https://maker.ifttt.com/trigger/turn_floatroom_fan_off/with/key/APIKEYGOESHERE',
-        lightOnUrl:'https://maker.ifttt.com/trigger/floatroom_light_on/with/key/APIKEYGOESHERE',
-        lightOffUrl:'https://maker.ifttt.com/trigger/floatroom_light_off/with/key/APIKEYGOESHERE',
-        lightColorDefaultUrl:'https://maker.ifttt.com/trigger/floatroom_light_default_color/with/key/APIKEYGOESHERE',
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
-        lightStripColor: "color",
-        defaultColor: {
-            "hex": "#ffa500",
-            "name": "Orange",
-        },
-        lightStripColorUrl: { 
-            "Red":'https://maker.ifttt.com/trigger/floatroom_light_red_color/with/key/APIKEYGOESHERE',
-            "Orange":'https://maker.ifttt.com/trigger/floatroom_light_orange_color/with/key/APIKEYGOESHERE',
-            "Yellow":'https://maker.ifttt.com/trigger/floatroom_light_yellow_color/with/key/APIKEYGOESHERE',
-            "Green":'https://maker.ifttt.com/trigger/floatroom_light_green_color/with/key/APIKEYGOESHERE',
-            "Blue":'https://maker.ifttt.com/trigger/floatroom_light_blue_color/with/key/APIKEYGOESHERE',
-            "Indigo":'https://maker.ifttt.com/trigger/floatroom_light_indigo_color/with/key/APIKEYGOESHERE',
-            "Purple":'https://maker.ifttt.com/trigger/floatroom_light_purple_color/with/key/APIKEYGOESHERE',
-            "White":'https://maker.ifttt.com/trigger/floatroom_light_white_color/with/key/APIKEYGOESHERE',
-            "Black":'https://maker.ifttt.com/trigger/floatroom_light_off/with/key/APIKEYGOESHERE',
-        },
-        lightsOnPreFloat: false,
-        preFloatLightOnMins: 7
+        lightStripRGBColor: null,
+        healthCheckUrl:'https://hc-ping.com/38193a04-d6d6-4262-8eea-ae6c48e1e9ec'
+    },
+    "Dream Pod 1":{
+        url:'http://IPHERE/api',
+        iftttDeviceName:"pod1",
+        minutesInSession:0,
+        postSessionLightFanTimeout: null,
+        postSessionLightFanTimeoutMins: 25,
+        lightStripRGBColor: null,
+        healthCheckUrl:'https://hc-ping.com/b8e5d846-e93b-4778-912a-3d67f1753186'
+
     }
 }
+module.exports.devices = {
+    "Infrared Sauna":{
+        iftttDeviceName:"sauna",
+        lightStripRGBColor: null,
+        lightTimeout: null,
+        lightOffAfterMins: 90,
+    }
+}
+
