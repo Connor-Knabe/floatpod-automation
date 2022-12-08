@@ -7,8 +7,11 @@ module.exports = function(got,logger,options,lightFanService) {
            
             if(deviceActiveSession){
                 const minsToPlayMusicBeforeEndSession = floatStatus.music_pre_end > 5 ? floatStatus.music_pre_end : 5;
+                const sessionDelayBefore = floatStatus.session_delay_before;
+
+                session_delay_before
                 //start automation 1 minute after music starts
-                const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1;
+                const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1 + sessionDelayBefore;
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
         
                 logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
