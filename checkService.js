@@ -53,7 +53,7 @@ module.exports = function(got,logger,options,lightFanService) {
         }
         async function checkForOverNightSession(deviceName, floatDevice){
             const theTime = new Date();
-            if(theTime.getHours() >= 0 && theTime.getHours() < 7){
+            if(theTime.getHours() >= 0 && theTime.getHours() < 1){
                 logger.debug(`checkForOverNightSession time passed ${floatDevice.minutesInSession}`);
                 if(floatDevice.minutesInSession > 5){
                     //send request to take out of session
