@@ -7,8 +7,8 @@ module.exports = function(got,logger,options,lightFanService) {
            
             if(deviceActiveSession){
                 const minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
-                const sessionDelayBefore = Number(floatStatus.session_delay_before);
-
+                const sessionDelayBefore = Number(floatStatus.session_delay_before) > 0 ? Number(floatStatus.session_delay_before) : 0;
+                logger.debug(`${deviceName}: sessionDelayBefore`);
                 //start automation 1 minute after music starts
                 const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1 + sessionDelayBefore;
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
@@ -37,7 +37,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 }
             } else if (deviceNewSession){
                 //only want to turn off fan once when in new session screen
-                logger.debug(`mins in session  now${floatDevice.minutesInSession}`);
+                logger.debug(`${deviceName}: mins in session now ${floatDevice.minutesInSession}`);
                 if(floatDevice.minutesInSession==0){
                     logger.info(`${deviceName}: turning fan off when in new session screen`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
