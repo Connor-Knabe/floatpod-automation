@@ -29,6 +29,8 @@ module.exports = function(got,logger,options,lightFanService) {
                         lightFanService.turnLightOff(deviceName, floatDevice);
                         floatDevice.minutesInSession = 1
                     }
+                    logger.debug(`${deviceName}: floatDevice.minutesInSession ${floatDevice.minutesInSession}`);
+
                     floatDevice.minutesInSession++;
                 } else if(floatDevice.minutesInSession > -1){
                     logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
