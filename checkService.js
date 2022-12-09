@@ -6,8 +6,8 @@ module.exports = function(got,logger,options,lightFanService) {
             const idleScreen = floatStatus.status == 0;
            
             if(deviceActiveSession){
-                const minsToPlayMusicBeforeEndSession = floatStatus.music_pre_end > 5 ? floatStatus.music_pre_end : 5;
-                const sessionDelayBefore = floatStatus.session_delay_before;
+                const minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
+                const sessionDelayBefore = Number(floatStatus.session_delay_before);
 
                 //start automation 1 minute after music starts
                 const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1 + sessionDelayBefore;
