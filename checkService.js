@@ -7,19 +7,20 @@ module.exports = function(got,logger,options,lightFanService) {
            
             if(deviceActiveSession){
                 const minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
-                const sessionDelayBefore = Number(floatStatus.session_delay_before) > 0 ? Number(floatStatus.session_delay_before)/60 : 0;
-                logger.debug(`${deviceName}: ${sessionDelayBefore}`);
+                const sessionDelayBefore = Number(floatStatus.session_delay_before) > 0 ? Number(floatStatus.session_delay_before)/60 : 1;
+                logger.debug(`${deviceName}: sessionDelayBefore ${sessionDelayBefore}`);
                 //start automation 1 minute after music starts
-                const minsTillSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1 + sessionDelayBefore;
+                // const minsWhenSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + sessionDelayBefore;
+                const minsWhenSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1;
                 const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
         
                 logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
                 logger.debug(`${deviceName}: music will play ${minsToPlayMusicBeforeEndSession} mins before session over`);
-                logger.debug(`${deviceName}: mins till session ends ${minsTillSessionEnds}`);
+                logger.debug(`${deviceName}: mins when session ends ${minsWhenSessionEnds}`);
                 logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
         
                 if(activeSessionNonLast5Min){
-                    if(floatDevice.minutesInSession >= minsTillSessionEnds){
+                    if(floatDevice.minutesInSession >= minsWhenSessionEnds){
                         logger.info(`${deviceName}: turning light and fan on end of session`);
                         await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
                         floatDevice.minutesInSession = 1;
