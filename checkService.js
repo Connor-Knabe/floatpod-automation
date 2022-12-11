@@ -87,7 +87,7 @@ module.exports = function(got,logger,options,lightFanService) {
             if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
                 //TODO: check for silent mode as well
-                if(floatDevice.status > 0 && floatDevice.silentStatus != 1){
+                if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > 5){
                     count++
                     deviceInSession = true;
                 }
