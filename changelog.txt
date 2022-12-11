@@ -1,3 +1,4 @@
+v1.7 - adjusting overnight check to look for in session screen only
 v1.6 - Notification for not all devices in session
 v1.5 - Fixing bug with music playing before end
 v1.2 - cleaning up code 

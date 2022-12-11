@@ -56,7 +56,7 @@ module.exports = function(got,logger,options,lightFanService) {
         } else if (idleScreen) {
             // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
-            await checkForAllDevicesInSession(floatDevice);
+            await checkForAllDevicesInSession(deviceName);
         }
     }
     async function checkForOverNightSession(deviceName, floatDevice){
@@ -99,14 +99,15 @@ module.exports = function(got,logger,options,lightFanService) {
         return deviceInSession;
     }
     
-    async function checkForAllDevicesInSession(floatDevice){
+    async function checkForAllDevicesInSession(deviceName){
         var areDevicesInSession = anyDevicesInSession();
-        if(areDevicesInSession){
+        if(areDevicesInSession && shouldAlertDeviceInSession){
             //send alert
             shouldAlertDeviceInSession = false;
+            logger.debug(`sending device in session alert`);
             await got.post(options.ifttt.alertUrl, {
                 json: {
-                    value1: floatDevice
+                    value1: deviceName
                 }
             });
         }
