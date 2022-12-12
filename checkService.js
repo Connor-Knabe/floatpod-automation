@@ -81,7 +81,7 @@ module.exports = function(got,logger,options,lightFanService) {
     }   
 
     function anyDevicesInSession(){
-        var deviceInSession = false;
+        var deviceInSession = null;
         var count = 0;
         for (var key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
@@ -89,7 +89,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 //TODO: check for silent mode as well
                 if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > 10){
                     count++
-                    deviceInSession = true;
+                    deviceInSession += `${key} `;
                 }
             }
         }
@@ -100,14 +100,14 @@ module.exports = function(got,logger,options,lightFanService) {
     }
     
     async function checkForAllDevicesInSession(deviceName){
-        var areDevicesInSession = anyDevicesInSession();
-        if(areDevicesInSession && shouldAlertDeviceInSession){
+        var devicesInSession = anyDevicesInSession();
+        if(devicesInSession && shouldAlertDeviceInSession){
             //send alert
             shouldAlertDeviceInSession = false;
             logger.debug(`sending device in session alert`);
             await got.post(options.ifttt.alertUrl, {
                 json: {
-                    value1: deviceName
+                    value1: devicesInSession
                 }
             });
         }
