@@ -88,7 +88,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 var floatDevice = options.floatDevices[key];
                 if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > options.minsInSessionBeforeAlert){
                     count++
-                    devicesInSession += `${key}  `;
+                    devicesInSession += `${key}|`;
                 }
             }
         }
@@ -105,7 +105,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 var floatDevice = options.floatDevices[key];
                 logger.debug(`notinsession ${key}`,JSON.stringify(floatDevice));
                 if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
-                    devicesNotInSession += `${key}  `;
+                    devicesNotInSession += `${key}|`;
                 }
             }
         }
