@@ -81,7 +81,7 @@ module.exports = function(got,logger,options,lightFanService) {
     }   
 
     function anyDevicesInSession(){
-        var devicesInSession = null;
+        var devicesInSession = "";
         var count = 0;
         for (var key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
@@ -113,15 +113,14 @@ module.exports = function(got,logger,options,lightFanService) {
     
     async function checkForAllDevicesInSession(deviceName){
         const devicesInSession = anyDevicesInSession();
-        if(devicesInSession && shouldAlertDeviceInSession){
+        if(devicesInSession != "" && shouldAlertDeviceInSession){
             //send alert
             shouldAlertDeviceInSession = false;
             logger.debug(`sending device in session alert`);
             const devicesNotInSession = anyDevicesNotInSession();
             await got.post(options.ifttt.alertUrl, {
                 json: {
-                    value1: devicesInSession,
-                    value2: devicesNotInSession
+                    value1: devicesInSession +"!" + devicesNotInSession
                 }
             });
         }
