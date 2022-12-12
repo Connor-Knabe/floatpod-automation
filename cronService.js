@@ -40,7 +40,7 @@ module.exports = function(options,got,logger, lightFanService) {
                         const silentData = await got.post(options.floatDevices[key].url, {
                             form:{
                             "api_key": options.apiKey,
-                            "command":"get_session_status"
+                            "command":"get_silence_status"
                             }
                         });
                         
