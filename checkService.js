@@ -88,7 +88,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 var floatDevice = options.floatDevices[key];
                 if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > 10){
                     count++
-                    devicesInSession += `${key} `;
+                    devicesInSession += `${key}  `;
                 }
             }
         }
@@ -104,7 +104,7 @@ module.exports = function(got,logger,options,lightFanService) {
             if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
                 if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
-                    devicesNotInSession += `${key} `;
+                    devicesNotInSession += `${key}  `;
                 }
             }
         }
