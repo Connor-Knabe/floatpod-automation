@@ -93,7 +93,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 }
             }
         }
-        if(count==4){
+        if(count==0){
             shouldAlertDeviceInSession = true;
         }
         return deviceInSession;
