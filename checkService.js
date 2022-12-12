@@ -99,10 +99,11 @@ module.exports = function(got,logger,options,lightFanService) {
     }
 
     function anyDevicesNotInSession(){
-        var devicesNotInSession = null;
+        var devicesNotInSession = "";
         for (var key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
+                logger.debug(`notinsession ${key}`,JSON.stringify(floatDevice));
                 if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
                     devicesNotInSession += `${key}  `;
                 }
