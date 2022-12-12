@@ -3,6 +3,8 @@ module.exports.defaultRGBColor = '255,127,0';
 module.exports.webhookKey = 'WEBHOOK_KEY_GOES_HERE';
 module.exports.loggerLevel = 'debug';
 const iftttApiKey = 'IFTTT_API_KEY_GOES_HERE';
+module.exports.minsInSessionBeforeAlert = 10;
+
 module.exports.ifttt = {
     preUrl:'https://maker.ifttt.com/trigger/',
     postUrl:'/with/key/'+iftttApiKey,
@@ -12,8 +14,9 @@ module.exports.ifttt = {
         lightOn:'_light_on',
         lightOff:'_light_off',
         lightColorDefault:'_light_default_color',
-        lightColorRGB:'_light_rgb_color',
-    }
+        lightColorRGB:'_light_rgb_color'
+    },
+    alertUrl: 'https://maker.ifttt.com/trigger/deviceIsNOTInSession/with/key/'+iftttApiKey
 };
 
 module.exports.floatDevices = {
@@ -24,7 +27,9 @@ module.exports.floatDevices = {
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
-        healthCheckUrl:'URLHERE'
+        healthCheckUrl:'URLHERE',
+        status: null,
+        silentStatus: null
     },
     "Dream Pod 1":{
         url:'http://IPHERE/api',
@@ -33,7 +38,9 @@ module.exports.floatDevices = {
         postSessionLightFanTimeout: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
-        healthCheckUrl:'URLHERE'
+        healthCheckUrl:'URLHERE',
+        status: null,
+        silentStatus: null
 
     }
 }
