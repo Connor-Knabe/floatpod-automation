@@ -81,33 +81,47 @@ module.exports = function(got,logger,options,lightFanService) {
     }   
 
     function anyDevicesInSession(){
-        var deviceInSession = null;
+        var devicesInSession = null;
         var count = 0;
         for (var key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
-                //TODO: check for silent mode as well
                 if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > 10){
                     count++
-                    deviceInSession += `${key} `;
+                    devicesInSession += `${key} `;
                 }
             }
         }
         if(count==0){
             shouldAlertDeviceInSession = true;
         }
-        return deviceInSession;
+        return devicesInSession;
+    }
+
+    function anyDevicesNotInSession(){
+        var devicesNotInSession = null;
+        for (var key in options.floatDevices) {
+            if (options.floatDevices.hasOwnProperty(key)) {
+                var floatDevice = options.floatDevices[key];
+                if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
+                    devicesNotInSession += `${key} `;
+                }
+            }
+        }
+        return devicesNotInSession;
     }
     
     async function checkForAllDevicesInSession(deviceName){
-        var devicesInSession = anyDevicesInSession();
+        const devicesInSession = anyDevicesInSession();
         if(devicesInSession && shouldAlertDeviceInSession){
             //send alert
             shouldAlertDeviceInSession = false;
             logger.debug(`sending device in session alert`);
+            const devicesNotInSession = anyDevicesNotInSession();
             await got.post(options.ifttt.alertUrl, {
                 json: {
-                    value1: devicesInSession
+                    value1: devicesInSession,
+                    value2: devicesNotInSession
                 }
             });
         }
