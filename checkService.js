@@ -56,7 +56,7 @@ module.exports = function(got,logger,options,lightFanService) {
         } else if (idleScreen) {
             // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
-            await checkForAllDevicesInSession(deviceName);
+            await checkForAllDevicesInSession();
         }
     }
     async function checkForOverNightSession(deviceName, floatDevice){
@@ -111,7 +111,7 @@ module.exports = function(got,logger,options,lightFanService) {
         return devicesNotInSession;
     }
     
-    async function checkForAllDevicesInSession(deviceName){
+    async function checkForAllDevicesInSession(){
         const devicesInSession = anyDevicesInSession();
         if(devicesInSession != "" && shouldAlertDeviceInSession){
             //send alert
