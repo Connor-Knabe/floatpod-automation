@@ -34,6 +34,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 
 		if(req.body['room_title']=='Infrared Sauna'){
 			if(roomColor && roomColor.name == 'Black'){
+				lightFanService.turnLightOff('Infrared Sauna', sauna);
 				options.devices[req.body['room_title']].lightStripRGBColor = '0,0,0';
 			} else {
 				options.devices[req.body['room_title']].lightStripRGBColor = rgbColor;
