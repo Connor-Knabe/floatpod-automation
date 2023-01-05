@@ -33,6 +33,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 		}
 
 		if(req.body['room_title']=='Infrared Sauna'){
+			var sauna = options.devices['Infrared Sauna'];
 			if(roomColor && roomColor.name == 'Black'){
 				lightFanService.turnLightOff('Infrared Sauna', sauna);
 				options.devices[req.body['room_title']].lightStripRGBColor = '0,0,0';
@@ -45,7 +46,6 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			} else {
 				logger.info(`Color wasn't set for sauna`);
 			}
-			var sauna = options.devices['Infrared Sauna'];
 			lightFanService.turnLightOn('Infrared Sauna', sauna);
 			clearTimeout(sauna.lightTimeout);
 			sauna.lightTimeout = setTimeout(async () => {
