@@ -1,3 +1,4 @@
+v1.8 - turns sauna light off when color preference black
 v1.7 - adjusting overnight check to look for in session screen only
 v1.6 - Notification for not all devices in session
 v1.5 - Fixing bug with music playing before end
