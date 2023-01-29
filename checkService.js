@@ -129,6 +129,13 @@ module.exports = function(got,logger,options,lightFanService) {
                     value1: devicesInSession +"!" + devicesNotInSession
                 }
             });
+        } else {
+            //turn on salt lamps and hallway light strip
+            await got.post(options.ifttt.noDeviceInSessionUrl, {
+                json: {
+                    value1: ""
+                }
+            });
         }
     }
 
