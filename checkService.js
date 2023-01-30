@@ -11,6 +11,9 @@ module.exports = function(got,logger,options,lightFanService) {
 
         var devicesInSession = anyDevicesInSession();
         logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
+        logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
+        logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
+
         if(devicesInSession != "" && shouldTurnHallwayLightsOff){
             //dim hallway light strip
             shouldTurnHallwayLightsOff = false;
@@ -21,7 +24,7 @@ module.exports = function(got,logger,options,lightFanService) {
             });
         } else if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
             //light strip on
-            
+
             shouldTurnHallwayLightsOff = true;
             await got.post(options.ifttt.noDeviceInSessionUrl, {
                 json: {
