@@ -12,9 +12,6 @@ module.exports = function(got,logger,options,lightFanService) {
       
         const minsBeforeCountInSession = -1;
         var devicesInSession = await anyDevicesInSession(minsBeforeCountInSession);
-        logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
-        logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
-        logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
         if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
             shouldTurnHallwayLightsOff = true;
             //light strip on
@@ -27,8 +24,8 @@ module.exports = function(got,logger,options,lightFanService) {
         }
         
         if(deviceActiveSession){
-            // if(shouldTurnHallwayLightsOff && floatDevice.minutesInSession > 10){
-            if(shouldTurnHallwayLightsOff){
+            if(shouldTurnHallwayLightsOff && floatDevice.minutesInSession > 10){
+            // if(shouldTurnHallwayLightsOff){
                 shouldTurnHallwayLightsOff = false;
                 logger.debug("turning hallway light strip off");
                 await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
