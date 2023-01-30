@@ -10,6 +10,7 @@ module.exports = function(got,logger,options,lightFanService) {
         floatDevice.silentStatus = silentStatus;
 
         var devicesInSession = anyDevicesInSession();
+        logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
         if(devicesInSession != "" && shouldTurnHallwayLightsOff){
             //dim hallway light strip
             shouldTurnHallwayLightsOff = false;
