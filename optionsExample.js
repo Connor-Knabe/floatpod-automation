@@ -6,6 +6,9 @@ const iftttApiKey = 'IFTTT_API_KEY_GOES_HERE';
 module.exports.minsInSessionBeforeAlert = 10;
 
 module.exports.ifttt = {
+    alertUrl: 'https://maker.ifttt.com/trigger/deviceIsNOTInSession/with/key/'+iftttApiKey,
+    noDeviceInSessionUrl: 'https://maker.ifttt.com/trigger/noDeviceInSession/with/key/'+iftttApiKey,
+    atLeastOneDeviceInSessionUrl: 'https://maker.ifttt.com/trigger/atleastOneDeviceInSession/with/key/'+iftttApiKey,
     preUrl:'https://maker.ifttt.com/trigger/',
     postUrl:'/with/key/'+iftttApiKey,
     event:{
@@ -16,7 +19,6 @@ module.exports.ifttt = {
         lightColorDefault:'_light_default_color',
         lightColorRGB:'_light_rgb_color'
     },
-    alertUrl: 'https://maker.ifttt.com/trigger/deviceIsNOTInSession/with/key/'+iftttApiKey
 };
 
 module.exports.floatDevices = {

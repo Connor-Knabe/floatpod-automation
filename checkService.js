@@ -1,5 +1,6 @@
 module.exports = function(got,logger,options,lightFanService) {
     var shouldAlertDeviceInSession = true;
+    var shouldTurnHallwayLightsOff = true;
     async function checkFloatStatus(deviceName,floatDevice,floatStatus, silentStatus){
         // logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
         const deviceNewSession = floatStatus.status == 1 || floatStatus.status == 2;
@@ -8,7 +9,28 @@ module.exports = function(got,logger,options,lightFanService) {
         floatDevice.status = floatStatus.status;
         floatDevice.silentStatus = silentStatus;
 
+        var devicesInSession = anyDevicesInSession();
+        if(devicesInSession != "" && shouldTurnHallwayLightsOff){
+            //dim hallway light strip
+            shouldTurnHallwayLightsOff = false;
+            await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
+                json: {
+                    value1: ""
+                }
+            });
+        } else if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
+            //light strip on
+            shouldTurnHallwayLightsOff = true;
+            await got.post(options.ifttt.noDeviceInSessionUrl, {
+                json: {
+                    value1: ""
+                }
+            });
+        }
         if(deviceActiveSession){
+            
+        
+    
             var minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
 
             if(floatStatus?.music_song.includes("_DS_")){
@@ -127,13 +149,6 @@ module.exports = function(got,logger,options,lightFanService) {
             await got.post(options.ifttt.alertUrl, {
                 json: {
                     value1: devicesInSession +"!" + devicesNotInSession
-                }
-            });
-        } else {
-            //turn on salt lamps and hallway light strip
-            await got.post(options.ifttt.noDeviceInSessionUrl, {
-                json: {
-                    value1: ""
                 }
             });
         }
