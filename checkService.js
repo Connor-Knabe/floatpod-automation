@@ -13,27 +13,25 @@ module.exports = function(got,logger,options,lightFanService) {
         logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
         logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
         logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
-
-        if(devicesInSession != "" && shouldTurnHallwayLightsOff){
-            //dim hallway light strip
-            shouldTurnHallwayLightsOff = false;
-            await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
-                json: {
-                    value1: ""
-                }
-            });
-        } else if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
-            //light strip on
-
+        if(devicesInSession == "") {
             shouldTurnHallwayLightsOff = true;
+            //light strip on
             await got.post(options.ifttt.noDeviceInSessionUrl, {
                 json: {
                     value1: ""
                 }
             });
         }
+        
         if(deviceActiveSession){
-            
+            if(shouldTurnHallwayLightsOff){
+                shouldTurnHallwayLightsOff = false;
+                await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
+                    json: {
+                        value1: ""
+                    }
+                });
+            }
         
     
             var minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
