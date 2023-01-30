@@ -13,7 +13,7 @@ module.exports = function(got,logger,options,lightFanService) {
         logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
         logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
         logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
-        if(devicesInSession == "") {
+        if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
             shouldTurnHallwayLightsOff = true;
             //light strip on
             logger.debug("turning hallway light strip on");
