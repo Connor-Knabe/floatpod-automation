@@ -9,23 +9,10 @@ module.exports = function(got,logger,options,lightFanService) {
         floatDevice.status = floatStatus.status;
         floatDevice.silentStatus = silentStatus;
 
-        var devicesInSession = anyDevicesInSession();
-        logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
-        logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
-        logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
-        if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
-            shouldTurnHallwayLightsOff = true;
-            //light strip on
-            logger.debug("turning hallway light strip on");
-            await got.post(options.ifttt.noDeviceInSessionUrl, {
-                json: {
-                    value1: ""
-                }
-            });
-        }
+      
         
         if(deviceActiveSession){
-            if(shouldTurnHallwayLightsOff){
+            if(shouldTurnHallwayLightsOff && floatDevice.minutesInSession > 10){
                 shouldTurnHallwayLightsOff = false;
                 logger.debug("turning hallway light strip off");
                 await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
@@ -89,6 +76,21 @@ module.exports = function(got,logger,options,lightFanService) {
             // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
             await checkForAllDevicesInSession();
+
+            var devicesInSession = await anyDevicesInSession();
+            logger.debug(`shouldTurnHallwayLightsOff ${shouldTurnHallwayLightsOff} devicesInSession${devicesInSession}`)
+            logger.debug(`devicesInSession != ""${devicesInSession != ""}`)
+            logger.debug(`devicesInSession == ""${devicesInSession == ""}`)
+            if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
+                shouldTurnHallwayLightsOff = true;
+                //light strip on
+                logger.debug("turning hallway light strip on");
+                await got.post(options.ifttt.noDeviceInSessionUrl, {
+                    json: {
+                        value1: ""
+                    }
+                });
+            }
         }
     }
     async function checkForOverNightSession(deviceName, floatDevice){
@@ -112,7 +114,7 @@ module.exports = function(got,logger,options,lightFanService) {
         } 
     }   
 
-    function anyDevicesInSession(){
+    async function anyDevicesInSession(){
         var devicesInSession = "";
         var count = 0;
         for (var key in options.floatDevices) {
@@ -145,7 +147,7 @@ module.exports = function(got,logger,options,lightFanService) {
     }
     
     async function checkForAllDevicesInSession(){
-        const devicesInSession = anyDevicesInSession();
+        const devicesInSession = await anyDevicesInSession();
         if(devicesInSession != "" && shouldAlertDeviceInSession){
             //send alert
             shouldAlertDeviceInSession = false;
