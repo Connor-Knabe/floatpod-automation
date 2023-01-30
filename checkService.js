@@ -16,6 +16,7 @@ module.exports = function(got,logger,options,lightFanService) {
         if(devicesInSession == "") {
             shouldTurnHallwayLightsOff = true;
             //light strip on
+            logger.debug("turning hallway light strip on");
             await got.post(options.ifttt.noDeviceInSessionUrl, {
                 json: {
                     value1: ""
@@ -26,6 +27,7 @@ module.exports = function(got,logger,options,lightFanService) {
         if(deviceActiveSession){
             if(shouldTurnHallwayLightsOff){
                 shouldTurnHallwayLightsOff = false;
+                logger.debug("turning hallway light strip off");
                 await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
                     json: {
                         value1: ""
