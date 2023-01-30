@@ -21,6 +21,7 @@ module.exports = function(got,logger,options,lightFanService) {
             });
         } else if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
             //light strip on
+            
             shouldTurnHallwayLightsOff = true;
             await got.post(options.ifttt.noDeviceInSessionUrl, {
                 json: {
