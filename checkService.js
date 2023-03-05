@@ -135,7 +135,7 @@ module.exports = function(got,logger,options,lightFanService) {
         for (var key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
                 var floatDevice = options.floatDevices[key];
-                logger.debug(`notinsession ${key}`,JSON.stringify(floatDevice));
+                logger.debug(`notinsession ${key}`);
                 if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
                     devicesNotInSession += `${key}|`;
                 }
