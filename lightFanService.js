@@ -60,6 +60,7 @@ module.exports = function (got, logger, options) {
         lightAndFanOnOffPostSessionTimer: lightAndFanOnOffPostSessionTimer,
         turnLightOff: turnLightOff,
         turnFanOff: turnFanOff,
+        turnFanOn,turnFanOn,
         turnLightOn: turnLightOn
     }
 };

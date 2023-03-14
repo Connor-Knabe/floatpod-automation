@@ -47,9 +47,11 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 				logger.info(`Color wasn't set for sauna`);
 			}
 			lightFanService.turnLightOn('Infrared Sauna', sauna);
+			lightFanService.turnFanOn('Infrared Sauna', sauna);
 			clearTimeout(sauna.lightTimeout);
 			sauna.lightTimeout = setTimeout(async () => {
 				await lightFanService.turnLightOff('Infrared Sauna', sauna);
+				lightFanService.turnFanOff('Infrared Sauna', sauna);
 				sauna.lightStripRGBColor = null;
 			}, sauna.lightOffAfterMins * 60 * 1000)
 		} else {
