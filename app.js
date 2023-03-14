@@ -51,7 +51,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 			clearTimeout(sauna.lightTimeout);
 			sauna.lightTimeout = setTimeout(async () => {
 				await lightFanService.turnLightOff('Infrared Sauna', sauna);
-				lightFanService.turnFanOff('Infrared Sauna', sauna);
+				await lightFanService.turnFanOff('Infrared Sauna', sauna);
 				sauna.lightStripRGBColor = null;
 			}, sauna.lightOffAfterMins * 60 * 1000)
 		} else {
