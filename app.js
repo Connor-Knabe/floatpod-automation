@@ -53,7 +53,7 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 				await lightFanService.turnLightOff('Infrared Sauna', sauna);
 				await lightFanService.turnFanOff('Infrared Sauna', sauna);
 				sauna.lightStripRGBColor = null;
-			}, sauna.lightOffAfterMins * 60 * 1000)
+			}, sauna.lightFanOffAfterMins * 60 * 1000)
 		} else {
 			if(roomColor && roomColor.name == 'Black'){
 				options.floatDevices[req.body['room_title']].lightStripRGBColor = '0,0,0';

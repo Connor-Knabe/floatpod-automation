@@ -51,7 +51,7 @@ module.exports.devices = {
         iftttDeviceName:"sauna",
         lightStripRGBColor: null,
         lightTimeout: null,
-        lightOffAfterMins: 90,
+        lightFanOffAfterMins: 90
     }
 }
 
