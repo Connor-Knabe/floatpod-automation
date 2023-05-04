@@ -1,3 +1,4 @@
+v2.4 - delay in turning sauna fan on
 v2.0 - turns off hallway light strip via ifttt when in session turns on when out of session
 v1.8 - turns sauna light off when color preference black
 v1.7 - adjusting overnight check to look for in session screen only
