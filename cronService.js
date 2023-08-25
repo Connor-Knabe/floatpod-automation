@@ -29,6 +29,21 @@ module.exports = function(options,got,logger, lightFanService) {
                             "command":"get_session_status"
                             }
                         });
+
+                        const dataTest = await got.post("http://66.1.11.11:9013/api", {
+                            form:{
+                            "api_key": options.apiKey,
+                            "command":"get_session_status"
+                            }
+                        });
+
+                        try {
+                            var floatStatusTest = dataTest ? JSON.parse(dataTest.body) : null;
+                            floatStatusTest = floatStatusTest ? JSON.parse(floatStatusTest.msg) : null;
+                        } catch (ex){
+                            logger.error(`${key}: failed to parse float status response ${ex}`)
+                        }
+
                 
                         try {
                             var floatStatus = data ? JSON.parse(data.body) : null;
@@ -38,6 +53,8 @@ module.exports = function(options,got,logger, lightFanService) {
                         }
 
                         logger.debug("float status",floatStatus);
+
+                        logger.debug("float status test",floatStatusTest);
 
                         const silentData = await got.post(options.floatDevices[key].url, {
                             form:{
