@@ -37,6 +37,8 @@ module.exports = function(options,got,logger, lightFanService) {
                             logger.error(`${key}: failed to parse float status response ${ex}`)
                         }
 
+                        logger.debug("float status",floatStatus);
+
                         const silentData = await got.post(options.floatDevices[key].url, {
                             form:{
                             "api_key": options.apiKey,
@@ -55,7 +57,7 @@ module.exports = function(options,got,logger, lightFanService) {
 
                         if(floatStatus){
                             checkService.checkFloatStatus(key,floatDevice,floatStatus,silentStatus);
-                            got.get(options.floatDevices[key].healthCheckUrl);
+                            // got.get(options.floatDevices[key].healthCheckUrl);
                         } else {
                             logger.error(`${key}: couldn't find float status`);
                         }
