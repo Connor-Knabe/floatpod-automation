@@ -61,6 +61,7 @@ module.exports = function(options,got,logger, lightFanService) {
                         }
 
                         if(floatStatus["status"] != undefined){
+                            logger.debug("status is valid");
                             checkService.checkFloatStatus(key,floatDevice,floatStatus,silentStatus);
                             got.get(options.floatDevices[key].healthCheckUrl);
                         } else {
