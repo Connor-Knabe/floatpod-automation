@@ -33,7 +33,6 @@ module.exports = function(options,got,logger, lightFanService) {
                             }
                         });
 
-                
                         try {
                             var floatStatus = data ? JSON.parse(data.body) : null;
                             floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
@@ -44,7 +43,6 @@ module.exports = function(options,got,logger, lightFanService) {
                         logger.debug("after calling float device");
                         logger.debug("float status",floatStatus);
 
-                        logger.debug("float status test",floatStatusTest);
 
                         const silentData = await got.post(options.floatDevices[key].url, {
                             form:{
