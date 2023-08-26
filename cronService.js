@@ -23,6 +23,8 @@ module.exports = function(options,got,logger, lightFanService) {
                         "set_session_start",
                         "set_session_cancel",
                         */
+
+                        logger.debug("before calling float device");
                         const data = await got.post(options.floatDevices[key].url, {
                             form:{
                             "api_key": options.apiKey,
@@ -52,6 +54,7 @@ module.exports = function(options,got,logger, lightFanService) {
                             logger.error(`${key}: failed to parse float status response ${ex}`)
                         }
 
+                        logger.debug("after calling float device");
                         logger.debug("float status",floatStatus);
 
                         logger.debug("float status test",floatStatusTest);
