@@ -27,14 +27,7 @@ module.exports = function(options,got,logger, lightFanService) {
 
                         logger.debug("before calling float device");
 
-                        // const data = await got.post(options.floatDevices[key].url, {
-                        //     form:{
-                        //     "api_key": options.apiKey,
-                        //     "command":"get_session_status"
-                        //     }
-                        // });
-
-                        const data = await got.post("https://66.66.66.66", {
+                        const data = await got.post(options.floatDevices[key].url, {
                             form:{
                             "api_key": options.apiKey,
                             "command":"get_session_status"
