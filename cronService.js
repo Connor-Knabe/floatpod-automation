@@ -60,9 +60,9 @@ module.exports = function(options,got,logger, lightFanService) {
                             logger.error(`${key}: failed to parse silent status response ${ex}`)
                         }
 
-                        if(floatStatus){
+                        if(floatStatus["status"] != undefined){
                             checkService.checkFloatStatus(key,floatDevice,floatStatus,silentStatus);
-                            // got.get(options.floatDevices[key].healthCheckUrl);
+                            got.get(options.floatDevices[key].healthCheckUrl);
                         } else {
                             logger.error(`${key}: couldn't find float status`);
                         }
