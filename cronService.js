@@ -26,12 +26,20 @@ module.exports = function(options,got,logger, lightFanService) {
 
                         logger.debug("before calling float device");
 
-                        const data = await got.post(options.floatDevices[key].url, {
+                        // const data = await got.post(options.floatDevices[key].url, {
+                        //     form:{
+                        //     "api_key": options.apiKey,
+                        //     "command":"get_session_status"
+                        //     }
+                        // });
+
+                        const data = await got.post("https://66.66.66.66", {
                             form:{
                             "api_key": options.apiKey,
                             "command":"get_session_status"
                             }
                         });
+
 
                         try {
                             var floatStatus = data ? JSON.parse(data.body) : null;
@@ -65,7 +73,7 @@ module.exports = function(options,got,logger, lightFanService) {
                             checkService.checkFloatStatus(key,floatDevice,floatStatus,silentStatus);
                             got.get(options.floatDevices[key].healthCheckUrl);
                         } else {
-                            logger.error(`${key}: couldn't find float status`);
+                            logger.debug(`${key}: couldn't find float status`);
                         }
                     } catch (ex){
                         logger.error('Failed to get status', ex);
