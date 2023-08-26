@@ -9,6 +9,7 @@ module.exports = function(options,got,logger, lightFanService) {
             for (var key in options.floatDevices) {
                 if (options.floatDevices.hasOwnProperty(key)) {
                     var floatDevice = options.floatDevices[key];
+                    logger.debug("Checking status for ", key);
                     try {
                         /*
                         * Commands:
@@ -76,7 +77,7 @@ module.exports = function(options,got,logger, lightFanService) {
                             logger.debug(`${key}: couldn't find float status`);
                         }
                     } catch (ex){
-                        logger.error('Failed to get status', ex);
+                        logger.debug('Failed to get status', ex);
                     }
                 
 
