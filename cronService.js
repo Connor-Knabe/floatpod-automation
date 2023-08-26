@@ -26,38 +26,12 @@ module.exports = function(options,got,logger, lightFanService) {
 
                         logger.debug("before calling float device");
 
-                        var data = null;
-                        var dataTest = null;
-                        try{
-                            data = await got.post(options.floatDevices[key].url, {
-                                form:{
-                                "api_key": options.apiKey,
-                                "command":"get_session_status"
-                                }
-                            });
-                        } catch(ex) {
-                            logger.debug("failed to call float device")
-                        }
-
-                        try {
-                            dataTest = await got.post("http://66.1.11.11:9013/api", {
-                                form:{
-                                "api_key": options.apiKey,
-                                "command":"get_session_status"
-                                }
-                            });
-                        } catch (ex){
-                            logger.debug("Failed to call float device test");
-                        }
-                  
-
-
-                        try {
-                            var floatStatusTest = dataTest ? JSON.parse(dataTest.body) : null;
-                            floatStatusTest = floatStatusTest ? JSON.parse(floatStatusTest.msg) : null;
-                        } catch (ex){
-                            logger.error(`${key}: failed to parse float status response ${ex}`)
-                        }
+                        const data = await got.post(options.floatDevices[key].url, {
+                            form:{
+                            "api_key": options.apiKey,
+                            "command":"get_session_status"
+                            }
+                        });
 
                 
                         try {
