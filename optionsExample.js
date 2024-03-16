@@ -1,5 +1,6 @@
 module.exports.apiKey = 'API_KEY_GOES_HERE';
 module.exports.defaultRGBColor = '255,127,0';
+module.exports.defaultSaunaRGBColor = '255,127,0';
 module.exports.webhookKey = 'WEBHOOK_KEY_GOES_HERE';
 module.exports.loggerLevel = 'debug';
 const iftttApiKey = 'IFTTT_API_KEY_GOES_HERE';
