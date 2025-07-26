@@ -59,16 +59,16 @@ module.exports = function(got,logger,options,lightFanService) {
                 if(floatDevice.minutesInSession >= minsWhenSessionEnds){
                     logger.info(`${deviceName}: turning light and fan on end of session`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
-                    floatDevice.minutesInSession = 1;
+                    floatDevice.minutesInSession = 0.5;
                 } else if (floatDevice.minutesInSession == 0) {
                     logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
                     lightFanService.turnLightOff(deviceName, floatDevice);
-                    floatDevice.minutesInSession = 1
+                    floatDevice.minutesInSession = 0.5
                 }
                 logger.debug(`${deviceName}: floatDevice.minutesInSession ${floatDevice.minutesInSession}`);
 
-                floatDevice.minutesInSession++;
+                floatDevice.minutesInSession += 0.5;
             } else if(floatDevice.minutesInSession > -1){
                 logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
                 await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
@@ -81,7 +81,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 logger.info(`${deviceName}: turning fan off when in new session screen`);
                 lightFanService.turnFanOff(deviceName, floatDevice);
                 lightFanService.turnLightOff(deviceName, floatDevice);
-                floatDevice.minutesInSession = 1;
+                floatDevice.minutesInSession = 0.5;
             }
             await checkForOverNightSession(deviceName, floatDevice);
 
@@ -105,7 +105,7 @@ module.exports = function(got,logger,options,lightFanService) {
                     }
                 });
             } else {
-                floatDevice.minutesInSession++;
+                floatDevice.minutesInSession += 0.5;
                 logger.debug(`checkForOverNightSession mins in session ${floatDevice.minutesInSession}`);
             }
             
