@@ -2,7 +2,7 @@ module.exports = function(options,got,logger, lightFanService) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     var job = new cron(
-        '0 * * * * *',
+        '*/30 * * * * *',
         //debug
         // '* * * * * *',
         async () => {
