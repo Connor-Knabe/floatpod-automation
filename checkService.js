@@ -56,10 +56,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 logger.debug(`${deviceName}: sessionEndTime updated to ${floatDevice.sessionEndTime.toISOString()}`);
             }
             
-            const sessionDelayBefore = Number(floatStatus.session_delay_before) > 0 ? Number(floatStatus.session_delay_before)/60 : 1;
-            logger.debug(`${deviceName}: sessionDelayBefore ${sessionDelayBefore}`);
-            //start automation 1 minute after music starts
-            // const minsWhenSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + sessionDelayBefore;
+            // Calculate remaining time based on absolute end time
             // Calculate remaining time based on absolute end time
             const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
             const timeRemainingMs = floatDevice.sessionEndTime ? floatDevice.sessionEndTime.getTime() - Date.now() : null;
@@ -67,7 +64,7 @@ module.exports = function(got,logger,options,lightFanService) {
     
             logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
             logger.debug(`${deviceName}: music will play ${minsToPlayMusicBeforeEndSession} mins before session over`);
-            logger.debug(`${deviceName}: mins when session ends ${minsWhenSessionEnds}`);
+
             logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
 
     

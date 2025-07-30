@@ -10,6 +10,12 @@ module.exports = function(options,got,logger, lightFanService) {
                 if (options.floatDevices.hasOwnProperty(key)) {
                     var floatDevice = options.floatDevices[key];
                     logger.debug("Checking status for ", key);
+                        // Adaptive polling: skip API call if within quiet interval
+                        const nowTs = Date.now();
+                        if (floatDevice.nextPollAllowed && nowTs < floatDevice.nextPollAllowed) {
+                            logger.debug(`${key}: skipping poll until ${new Date(floatDevice.nextPollAllowed).toISOString()}`);
+                            continue;
+                        }
                     try {
                         /*
                         * Commands:
@@ -66,6 +72,30 @@ module.exports = function(options,got,logger, lightFanService) {
                         if(floatStatus["status"] != undefined){
                             logger.debug("status is valid");
                             checkService.checkFloatStatus(key,floatDevice,floatStatus,silentStatus);
+                            // After processing, decide next poll interval
+                            try {
+                                const nowTs2 = Date.now();
+                                let minsToPlayMusicBeforeEnd = 5;
+                                if (floatStatus && floatStatus.music_pre_end) {
+                                    minsToPlayMusicBeforeEnd = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
+                                    if (floatStatus.music_song?.includes('_DS_')) minsToPlayMusicBeforeEnd = 5;
+                                }
+                                let timeRemainingMins = null;
+                                if (floatDevice.sessionEndTime instanceof Date) {
+                                    timeRemainingMins = (floatDevice.sessionEndTime.getTime() - nowTs2) / 60000;
+                                }
+                                let intervalMins = 1;
+                                if (timeRemainingMins === null || timeRemainingMins > (minsToPlayMusicBeforeEnd + 1)) {
+                                    intervalMins = 4;
+                                }
+                                floatDevice.nextPollAllowed = nowTs2 + intervalMins * 60_000;
+                                // If pod is idle, reset to poll immediately
+                                if (floatStatus.status == 0) {
+                                    floatDevice.nextPollAllowed = 0;
+                                }
+                            } catch (e) {
+                                logger.error(`${key}: failed to schedule next poll interval`, e);
+                            }
                             got.get(options.floatDevices[key].healthCheckUrl);
                         } else {
                             logger.debug(`${key}: couldn't find float status`);
