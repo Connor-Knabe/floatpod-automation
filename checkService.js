@@ -41,13 +41,29 @@ module.exports = function(got,logger,options,lightFanService) {
             if(floatStatus?.music_song.includes("_DS_")){
                 minsToPlayMusicBeforeEndSession = 5;
             }
+
+            // Detect if the controller reports a new duration mid-session (e.g., session extended)
+            const currentDuration = Number(floatStatus.duration);
+            if (floatDevice.sessionDuration === undefined) {
+                floatDevice.sessionDuration = currentDuration;
+            }
+            if (currentDuration !== floatDevice.sessionDuration) {
+                logger.info(`${deviceName}: session duration changed from ${floatDevice.sessionDuration} to ${currentDuration} seconds – updating timers`);
+                floatDevice.sessionDuration = currentDuration;
+                // Re-calculate absolute end time based on remaining minutes
+                const remainingMinutes = currentDuration / 60 - floatDevice.minutesInSession;
+                floatDevice.sessionEndTime = new Date(Date.now() + remainingMinutes * 60 * 1000);
+                logger.debug(`${deviceName}: sessionEndTime updated to ${floatDevice.sessionEndTime.toISOString()}`);
+            }
             
             const sessionDelayBefore = Number(floatStatus.session_delay_before) > 0 ? Number(floatStatus.session_delay_before)/60 : 1;
             logger.debug(`${deviceName}: sessionDelayBefore ${sessionDelayBefore}`);
             //start automation 1 minute after music starts
             // const minsWhenSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + sessionDelayBefore;
-            const minsWhenSessionEnds = floatStatus.duration/60 - minsToPlayMusicBeforeEndSession + 1;
+            // Calculate remaining time based on absolute end time
             const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
+            const timeRemainingMs = floatDevice.sessionEndTime ? floatDevice.sessionEndTime.getTime() - Date.now() : null;
+            const timeRemainingMins = timeRemainingMs !== null ? timeRemainingMs / 60000 : null;
     
             logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
             logger.debug(`${deviceName}: music will play ${minsToPlayMusicBeforeEndSession} mins before session over`);
@@ -56,11 +72,17 @@ module.exports = function(got,logger,options,lightFanService) {
 
     
             if(activeSessionNonLast5Min){
-                if(floatDevice.minutesInSession >= minsWhenSessionEnds){
-                    logger.info(`${deviceName}: turning light and fan on end of session`);
+                if(timeRemainingMins !== null && timeRemainingMins <= (minsToPlayMusicBeforeEndSession - 1)){
+                    logger.info(`${deviceName}: turning light and fan on end-of-session schedule`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
                     floatDevice.minutesInSession = 1;
                 } else if (floatDevice.minutesInSession == 0) {
+                    // Record absolute session end time at the start of an active session
+                    const now = Date.now();
+                    const sessionDurationMs = Number(floatStatus.duration) * 1000; // duration reported in seconds
+                    floatDevice.sessionEndTime = new Date(now + sessionDurationMs);
+                    logger.debug(`${deviceName}: sessionEndTime set to ${floatDevice.sessionEndTime.toISOString()}`);
+
                     logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
                     lightFanService.turnLightOff(deviceName, floatDevice);
@@ -88,6 +110,8 @@ module.exports = function(got,logger,options,lightFanService) {
         } else if (idleScreen) {
             // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
+            floatDevice.sessionEndTime = null; // clear stored end time when idle
+            floatDevice.sessionDuration = null; // clear stored duration
             await checkForAllDevicesInSession();
         }
     }
