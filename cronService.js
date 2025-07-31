@@ -73,7 +73,15 @@ module.exports = function(options,got,logger, lightFanService) {
                     // If we have an active session with an end time
                     if (floatStatus.status === 3 && floatDevice.sessionEndTime) {
                         const now = Date.now();
-                        const musicLeadTime = (floatDevice.musicLeadTime || 5) * 60 * 1000;
+
+ 
+                        var musicLeadTime = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
+
+                        if(floatStatus?.music_song.includes("_DS_")){
+                            musicLeadTime = 5;
+                        }
+
+                        musicLeadTime = musicLeadTime * 60 * 1000;
                         const musicStartTime = floatDevice.sessionEndTime.getTime() - musicLeadTime;
                         const timeToMusicStart = musicStartTime - now;
                         
