@@ -54,6 +54,7 @@ module.exports = function(got,logger,options,lightFanService) {
                 const remainingMinutes = currentDuration / 60 - floatDevice.minutesInSession;
                 floatDevice.sessionEndTime = new Date(Date.now() + remainingMinutes * 60 * 1000);
                 logger.debug(`${deviceName}: sessionEndTime updated to ${floatDevice.sessionEndTime.toISOString()}`);
+                logger.debug(`${deviceName}: sessionEndTime CST ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
             }
             
             // Calculate remaining time based on absolute end time
@@ -69,7 +70,7 @@ module.exports = function(got,logger,options,lightFanService) {
 
     
             if(activeSessionNonLast5Min){
-                if(timeRemainingMins !== null && timeRemainingMins <= (minsToPlayMusicBeforeEndSession - 1)){
+                if(timeRemainingMins !== null && timeRemainingMins <= minsToPlayMusicBeforeEndSession){
                     logger.info(`${deviceName}: turning light and fan on end-of-session schedule`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
                     floatDevice.minutesInSession = 1;
@@ -79,6 +80,7 @@ module.exports = function(got,logger,options,lightFanService) {
                     const sessionDurationMs = Number(floatStatus.duration) * 1000; // duration reported in seconds
                     floatDevice.sessionEndTime = new Date(now + sessionDurationMs);
                     logger.debug(`${deviceName}: sessionEndTime set to ${floatDevice.sessionEndTime.toISOString()}`);
+                    logger.debug(`${deviceName}: sessionEndTime CST ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
 
                     logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
