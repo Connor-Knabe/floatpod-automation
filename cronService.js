@@ -7,9 +7,13 @@ module.exports = function(options,got,logger, lightFanService) {
     
     async function checkDevice(key) {
         const floatDevice = options.floatDevices[key];
-        logger.debug("Checking status for ", key);
+        const startTime = Date.now();
+        logger.debug(`=== Starting check for ${key} at ${new Date().toISOString()} ===`);
         
         try {
+            // Log before making API call
+            logger.debug(`${key}: Making API call to get session status`);
+            
             // Make the API call to get session status
             const data = await got.post(floatDevice.url, {
                 form: {
@@ -24,7 +28,10 @@ module.exports = function(options,got,logger, lightFanService) {
                 floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
                 
                 if (floatStatus) {
+                    logger.debug(`${key}: Session status - Status: ${floatStatus.status}, Duration: ${floatStatus.duration}s`);
+                    
                     // Get silence status in parallel
+                    logger.debug(`${key}: Getting silence status`);
                     const silentData = await got.post(floatDevice.url, {
                         form: {
                             "api_key": options.apiKey,
@@ -37,50 +44,87 @@ module.exports = function(options,got,logger, lightFanService) {
                     try {
                         silentStatus = silentData ? JSON.parse(silentData.body) : null;
                         silentStatus = silentStatus ? silentStatus.msg : null;
+                        logger.debug(`${key}: Silence status: ${silentStatus}`);
                     } catch (ex) {
                         logger.error(`${key}: failed to parse silent status response`, ex);
                     }
                     
+                    // Log session details before processing
+                    if (floatDevice.sessionEndTime) {
+                        const now = new Date();
+                        const timeUntilEnd = floatDevice.sessionEndTime - now;
+                        const minsUntilEnd = Math.ceil(timeUntilEnd / (60 * 1000));
+                        logger.debug(`${key}: Session end time: ${floatDevice.sessionEndTime.toISOString()}`);
+                        logger.debug(`${key}: Time until session end: ${minsUntilEnd} minutes`);
+                    }
+
                     // Process the status update
+                    logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
                     await checkService.checkFloatStatus(key, floatDevice, floatStatus, silentStatus);
                     
                     // Determine next poll interval based on session state
                     let nextPollMs = 4 * 60 * 1000; // Default: 4 minutes
+                    let pollReason = 'default (4m)';
                     
                     // If we have an active session with an end time
                     if (floatStatus.status === 3 && floatDevice.sessionEndTime) {
                         const now = Date.now();
-                        const musicStartTime = floatDevice.sessionEndTime.getTime() - 
-                                           (floatDevice.musicLeadTime || 5) * 60 * 1000;
+                        const musicLeadTime = (floatDevice.musicLeadTime || 5) * 60 * 1000;
+                        const musicStartTime = floatDevice.sessionEndTime.getTime() - musicLeadTime;
                         const timeToMusicStart = musicStartTime - now;
+                        
+                        // Log timing information
+                        logger.debug(`${key}: Music will start at: ${new Date(musicStartTime).toISOString()}`);
+                        logger.debug(`${key}: Time until music starts: ${Math.ceil(timeToMusicStart/1000)}s`);
                         
                         // If within 1 minute of music start, poll every 20 seconds
                         if (timeToMusicStart > 0 && timeToMusicStart < 60 * 1000) {
                             nextPollMs = 20 * 1000; // 20 seconds
-                            logger.debug(`${key}: Within 1 minute of music start, polling every 20s`);
+                            pollReason = 'music starting soon (20s)';
+                        } else {
+                            pollReason = 'active session (4m)';
                         }
                     }
                     
+                    logger.debug(`${key}: Next poll in ${nextPollMs/1000}s - ${pollReason}`);
+                    
+                    // Log timing information
+                    const endTime = Date.now();
+                    const processingTime = endTime - startTime;
+                    logger.debug(`${key}: Processing completed in ${processingTime}ms`);
+                    
                     // Clear any existing interval and set a new one
                     clearInterval(deviceIntervals[key]);
+                    logger.debug(`${key}: Scheduled next check in ${nextPollMs/1000} seconds`);
                     deviceIntervals[key] = setTimeout(() => checkDevice(key), nextPollMs);
                     
                     // Make health check call
-                    got.get(floatDevice.healthCheckUrl).catch(ex => 
-                        logger.error(`${key}: Health check failed`, ex)
-                    );
+                    logger.debug(`${key}: Making health check call`);
+                    got.get(floatDevice.healthCheckUrl)
+                        .then(() => logger.debug(`${key}: Health check successful`))
+                        .catch(ex => 
+                            logger.error(`${key}: Health check failed: ${ex.message}`, ex)
+                        );
+                } else {
+                    logger.warn(`${key}: No float status received`);
                 }
             } catch (ex) {
-                logger.error(`${key}: failed to process status`, ex);
+                const errorTime = new Date().toISOString();
+                logger.error(`${key}: [${errorTime}] Failed to process status after ${Date.now() - startTime}ms`, ex);
                 // On error, retry after 1 minute
                 clearInterval(deviceIntervals[key]);
-                deviceIntervals[key] = setTimeout(() => checkDevice(key), 60 * 1000);
+                const retryTime = Date.now() + 60000;
+                logger.debug(`${key}: Will retry at ${new Date(retryTime).toISOString()}`);
+                deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
             }
         } catch (ex) {
-            logger.error(`${key}: API call failed:`, ex);
+            const errorTime = new Date().toISOString();
+            logger.error(`${key}: [${errorTime}] API call failed after ${Date.now() - startTime}ms`, ex);
             // On error, retry after 1 minute
             clearInterval(deviceIntervals[key]);
-            deviceIntervals[key] = setTimeout(() => checkDevice(key), 60 * 1000);
+            const retryTime = Date.now() + 60000;
+            logger.debug(`${key}: Will retry API call at ${new Date(retryTime).toISOString()}`);
+            deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
         }
     }
     
