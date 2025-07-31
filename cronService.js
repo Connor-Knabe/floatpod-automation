@@ -13,7 +13,7 @@ module.exports = function(options,got,logger, lightFanService) {
                         // Adaptive polling: skip API call if within quiet interval
                         const nowTs = Date.now();
                         if (floatDevice.nextPollAllowed && nowTs < floatDevice.nextPollAllowed) {
-                            logger.debug(`${key}: skipping poll until ${new Date(floatDevice.nextPollAllowed).toISOString()}`);
+                            logger.debug(`${key}: skipping poll until ${new Date(floatDevice.nextPollAllowed).toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
                             continue;
                         }
                     try {
