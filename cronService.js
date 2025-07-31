@@ -5,10 +5,14 @@ module.exports = function(options,got,logger, lightFanService) {
     // Store the active interval for each device
     const deviceIntervals = {};
     
+    function formatChicagoTime(date) {
+        return date.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false });
+    }
+    
     async function checkDevice(key) {
         const floatDevice = options.floatDevices[key];
         const startTime = Date.now();
-        logger.debug(`=== Starting check for ${key} at ${new Date().toISOString()} ===`);
+        logger.debug(`=== Starting check for ${key} at ${formatChicagoTime(new Date())} (Chicago) ===`);
         
         try {
             // Log before making API call
@@ -54,7 +58,7 @@ module.exports = function(options,got,logger, lightFanService) {
                         const now = new Date();
                         const timeUntilEnd = floatDevice.sessionEndTime - now;
                         const minsUntilEnd = Math.ceil(timeUntilEnd / (60 * 1000));
-                        logger.debug(`${key}: Session end time: ${floatDevice.sessionEndTime.toISOString()}`);
+                        logger.debug(`${key}: Session end time: ${formatChicagoTime(floatDevice.sessionEndTime)} (Chicago)`);
                         logger.debug(`${key}: Time until session end: ${minsUntilEnd} minutes`);
                     }
 
@@ -74,7 +78,7 @@ module.exports = function(options,got,logger, lightFanService) {
                         const timeToMusicStart = musicStartTime - now;
                         
                         // Log timing information
-                        logger.debug(`${key}: Music will start at: ${new Date(musicStartTime).toISOString()}`);
+                        logger.debug(`${key}: Music will start at: ${formatChicagoTime(new Date(musicStartTime))} (Chicago)`);
                         logger.debug(`${key}: Time until music starts: ${Math.ceil(timeToMusicStart/1000)}s`);
                         
                         // If within 1 minute of music start, poll every 20 seconds
@@ -109,21 +113,21 @@ module.exports = function(options,got,logger, lightFanService) {
                     logger.warn(`${key}: No float status received`);
                 }
             } catch (ex) {
-                const errorTime = new Date().toISOString();
-                logger.error(`${key}: [${errorTime}] Failed to process status after ${Date.now() - startTime}ms`, ex);
+                const errorTime = new Date();
+                logger.error(`${key}: [${formatChicagoTime(errorTime)}] Failed to process status after ${Date.now() - startTime}ms`, ex);
                 // On error, retry after 1 minute
                 clearInterval(deviceIntervals[key]);
                 const retryTime = Date.now() + 60000;
-                logger.debug(`${key}: Will retry at ${new Date(retryTime).toISOString()}`);
+                logger.debug(`${key}: Will retry at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
                 deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
             }
         } catch (ex) {
-            const errorTime = new Date().toISOString();
-            logger.error(`${key}: [${errorTime}] API call failed after ${Date.now() - startTime}ms`, ex);
+            const errorTime = new Date();
+            logger.error(`${key}: [${formatChicagoTime(errorTime)}] API call failed after ${Date.now() - startTime}ms`, ex);
             // On error, retry after 1 minute
             clearInterval(deviceIntervals[key]);
             const retryTime = Date.now() + 60000;
-            logger.debug(`${key}: Will retry API call at ${new Date(retryTime).toISOString()}`);
+            logger.debug(`${key}: Will retry API call at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
             deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
         }
     }
