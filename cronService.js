@@ -32,7 +32,10 @@ module.exports = function(options,got,logger, lightFanService) {
                 floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
                 
                 if (floatStatus) {
-                    logger.debug(`${key}: Session status - Status: ${floatStatus.status}, Duration: ${floatStatus.duration}s`);
+                    const durationSeconds = parseInt(floatStatus.duration, 10);
+                    const minutes = Math.floor(durationSeconds / 60);
+                    const seconds = durationSeconds % 60;
+                    logger.debug(`${key}: Session status - Status: ${floatStatus.status}, Duration: ${minutes}m ${seconds}s`);
                     
                     // Get silence status in parallel
                     logger.debug(`${key}: Getting silence status`);
@@ -87,7 +90,10 @@ module.exports = function(options,got,logger, lightFanService) {
                         
                         // Log timing information
                         logger.debug(`${key}: Music will start at: ${formatChicagoTime(new Date(musicStartTime))} (Chicago)`);
-                        logger.debug(`${key}: Time until music starts: ${Math.ceil(timeToMusicStart/1000)}s`);
+                        const totalSeconds = Math.ceil(timeToMusicStart/1000);
+                        const minutes = Math.floor(totalSeconds / 60);
+                        const seconds = totalSeconds % 60;
+                        logger.debug(`${key}: Time until music starts: ${minutes}m ${seconds}s`);
                         
                         // If within 1 minute of music start, poll every 20 seconds
                         if (timeToMusicStart > 0 && timeToMusicStart < 60 * 1000) {
