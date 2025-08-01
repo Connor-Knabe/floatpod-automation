@@ -18,10 +18,14 @@ const lightFanService = require('./lightFanService.js')(got,logger,options);
 let lastColorUpdate = null;
 let lastSessionEndTime = null;
 
-// Pass lastColorUpdate getter to cronService
+// Pass getters to cronService
 const cronService = require('./cronService.js')(options, got, logger, lightFanService, 
     () => lastColorUpdate,  // getLastColorUpdate
-    (time) => { lastSessionEndTime = time; }  // setLastSessionEndTime
+    () => lastSessionEndTime,  // getLastSessionEndTime
+    (time) => { 
+        lastSessionEndTime = time; 
+        logger.debug(`Updated last session end time to: ${time ? new Date(time).toLocaleString('en-US', { timeZone: 'America/Chicago' }) : 'null'}`);
+    }  // setLastSessionEndTime
 );
 
 // Perform initial health check for all devices on startup

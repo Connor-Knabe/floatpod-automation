@@ -1,4 +1,4 @@
-module.exports = function(options, got, logger, lightFanService, getLastColorUpdate, setLastSessionEndTime) {
+module.exports = function(options, got, logger, lightFanService, getLastColorUpdate, getLastSessionEndTime, setLastSessionEndTime) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     
@@ -35,9 +35,10 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
         }
         
         // Check for recent session end (within 2 hours)
-        if (lastSessionEndTime) {
+        const sessionEndTime = getLastSessionEndTime ? getLastSessionEndTime() : null;
+        if (sessionEndTime) {
             const twoHoursAgo = Date.now() - (120 * 60 * 1000);
-            if (lastSessionEndTime > twoHoursAgo) {
+            if (sessionEndTime > twoHoursAgo) {
                 return true;
             }
         }
