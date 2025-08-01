@@ -1,4 +1,4 @@
-module.exports = function(options, got, logger, lightFanService, getLastColorUpdate) {
+module.exports = function(options, got, logger, lightFanService, getLastColorUpdate, setLastSessionEndTime) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     
@@ -25,12 +25,24 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
     }
     
     function shouldUseFastPolling() {
+        // Check for recent color updates (within 2 hours)
         const lastColorUpdate = getLastColorUpdate ? getLastColorUpdate() : null;
-        if (!lastColorUpdate) return false;
+        if (lastColorUpdate) {
+            const twoHoursAgo = Date.now() - (120 * 60 * 1000);
+            if (lastColorUpdate > twoHoursAgo) {
+                return true;
+            }
+        }
         
-        // Check if last color update was within the last 2 hours (120 minutes)
-        const twoHoursAgo = Date.now() - (120 * 60 * 1000);
-        return lastColorUpdate > twoHoursAgo;
+        // Check for recent session end (within 2 hours)
+        if (lastSessionEndTime) {
+            const twoHoursAgo = Date.now() - (120 * 60 * 1000);
+            if (lastSessionEndTime > twoHoursAgo) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     async function checkDevice(key) {
@@ -60,6 +72,15 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
                     const minutes = Math.floor(durationSeconds / 60);
                     const seconds = durationSeconds % 60;
                     logger.debug(`${key}: Session status - Status: ${floatStatus.status}, Duration: ${minutes}m ${seconds}s`);
+                    
+                    // Update last session end time when a session is active
+                    if (setLastSessionEndTime) {
+                        const sessionEndTime = new Date(floatDevice.sessionEndTime);
+                        if (!isNaN(sessionEndTime.getTime())) {
+                            logger.debug(`${key}: Updating last session end time to ${formatChicagoTime(sessionEndTime)}`);
+                            setLastSessionEndTime(sessionEndTime.getTime());
+                        }
+                    }
                     
                     // Get silence status in parallel
                     logger.debug(`${key}: Getting silence status`);

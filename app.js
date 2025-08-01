@@ -18,7 +18,28 @@ const lightFanService = require('./lightFanService.js')(got,logger,options);
 let lastColorUpdate = null;
 
 // Pass lastColorUpdate getter to cronService
-const cronService = require('./cronService.js')(options, got, logger, lightFanService, () => lastColorUpdate);
+const cronService = require('./cronService.js')(options, got, logger, lightFanService, 
+    () => lastColorUpdate,  // getLastColorUpdate
+    (time) => { lastSessionEndTime = time; }  // setLastSessionEndTime
+);
+
+// Perform initial health check for all devices on startup
+function performInitialHealthChecks() {
+    logger.debug('Performing initial health checks for all devices');
+    for (const [deviceName, device] of Object.entries(options.floatDevices || {})) {
+        if (device.healthCheckUrl) {
+            logger.debug(`${deviceName}: Making initial health check`);
+            got.get(device.healthCheckUrl, { timeout: 10000 })
+                .then(() => logger.info(`${deviceName}: Initial health check successful`))
+                .catch(ex => 
+                    logger.error(`${deviceName}: Initial health check failed: ${ex.message}`, ex)
+                );
+        }
+    }
+}
+
+// Run initial health checks after a short delay to allow other initialization to complete
+setTimeout(performInitialHealthChecks, 5000);
 
 app.get('/', function (req, res) {
     res.send('200');
@@ -27,7 +48,8 @@ app.get('/', function (req, res) {
 app.post('/color-'+options.webhookKey, function (req, res) { 
 	// Update last color update time
 	lastColorUpdate = Date.now();
-	logger.debug(`Color update received at: ${new Date(lastColorUpdate).toISOString()}`);
+	const chicagoTime = new Date(lastColorUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+	logger.debug(`Color update received at: ${chicagoTime} (Chicago)`);
 	
 	var roomColor = null;
 	var rgbColor = null;
