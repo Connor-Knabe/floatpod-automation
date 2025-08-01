@@ -68,17 +68,25 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
                 floatStatus = floatStatus ? JSON.parse(floatStatus.msg) : null;
                 
                 if (floatStatus) {
-                    const durationSeconds = parseInt(floatStatus.duration, 10);
-                    const minutes = Math.floor(durationSeconds / 60);
-                    const seconds = durationSeconds % 60;
-                    logger.debug(`${key}: Session status - Status: ${floatStatus.status}, Duration: ${minutes}m ${seconds}s`);
+                    let durationText = 'N/A';
+                    if (floatStatus.duration !== undefined && floatStatus.duration !== null) {
+                        const durationSeconds = parseInt(floatStatus.duration, 10);
+                        if (!isNaN(durationSeconds)) {
+                            const minutes = Math.floor(durationSeconds / 60);
+                            const seconds = durationSeconds % 60;
+                            durationText = `${minutes}m ${seconds}s`;
+                        }
+                    }
+                    logger.debug(`${key}: Session status - Status: ${floatStatus.status || 'N/A'}, Duration: ${durationText}`);
                     
                     // Update last session end time when a session is active
-                    if (setLastSessionEndTime) {
+                    if (setLastSessionEndTime && floatDevice.sessionEndTime) {
                         const sessionEndTime = new Date(floatDevice.sessionEndTime);
-                        if (!isNaN(sessionEndTime.getTime())) {
+                        if (!isNaN(sessionEndTime.getTime()) && sessionEndTime.getTime() > 0) {
                             logger.debug(`${key}: Updating last session end time to ${formatChicagoTime(sessionEndTime)}`);
                             setLastSessionEndTime(sessionEndTime.getTime());
+                        } else {
+                            logger.debug(`${key}: Invalid session end time (${floatDevice.sessionEndTime}), not updating`);
                         }
                     }
                     
@@ -176,7 +184,8 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
                     
                     // Clear any existing interval and set a new one
                     clearInterval(deviceIntervals[key]);
-                    logger.debug(`${key}: Scheduled next check in ${nextPollMs/1000} seconds`);
+                    const nextCheckMins = (nextPollMs / 60000).toFixed(1);
+                    logger.debug(`${key}: Scheduled next check in ${nextCheckMins} minutes`);
                     deviceIntervals[key] = setTimeout(() => checkDevice(key), nextPollMs);
                     
                     // Make health check call

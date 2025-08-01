@@ -14,8 +14,9 @@ logger.info("FloatPod automation start" + options.loggerLevel);
 logger.error("FloatPod automation error start" + options.loggerLevel);
 const lightFanService = require('./lightFanService.js')(got,logger,options);
 
-// Track last color update time
+// Track last color update time and last session end time
 let lastColorUpdate = null;
+let lastSessionEndTime = null;
 
 // Pass lastColorUpdate getter to cronService
 const cronService = require('./cronService.js')(options, got, logger, lightFanService, 
