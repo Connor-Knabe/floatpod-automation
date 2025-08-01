@@ -1,4 +1,4 @@
-module.exports = function(options,got,logger, lightFanService) {
+module.exports = function(options, got, logger, lightFanService, getLastColorUpdate) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     
@@ -7,6 +7,30 @@ module.exports = function(options,got,logger, lightFanService) {
     
     function formatChicagoTime(date) {
         return date.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false });
+    }
+    
+    function isNightTime() {
+        const now = new Date();
+        const chicagoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+        const hours = chicagoTime.getHours();
+        // Check if current time is between 10 PM (22) and 8 AM (8)
+        return hours >= 22 || hours < 8;
+    }
+    
+    function isTuesdayOrWednesday() {
+        const now = new Date();
+        const chicagoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+        const day = chicagoTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        return day === 2 || day === 3; // 2 = Tuesday, 3 = Wednesday
+    }
+    
+    function shouldUseFastPolling() {
+        const lastColorUpdate = getLastColorUpdate ? getLastColorUpdate() : null;
+        if (!lastColorUpdate) return false;
+        
+        // Check if last color update was within the last 2 hours (120 minutes)
+        const twoHoursAgo = Date.now() - (120 * 60 * 1000);
+        return lastColorUpdate > twoHoursAgo;
     }
     
     async function checkDevice(key) {
@@ -69,9 +93,27 @@ module.exports = function(options,got,logger, lightFanService) {
                     logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
                     await checkService.checkFloatStatus(key, floatDevice, floatStatus, silentStatus);
                     
-                    // Determine next poll interval based on session state
-                    let nextPollMs = 4 * 60 * 1000; // Default: 4 minutes
-                    let pollReason = 'default (4m)';
+                    // Determine next poll interval based on various conditions
+                    let nextPollMs;
+                    let pollReason;
+                    
+                    if (shouldUseFastPolling()) {
+                        // Fast polling for 2 hours after color update
+                        nextPollMs = 4 * 60 * 1000; // 4 minutes
+                        pollReason = 'recent color update (4m)';
+                    } else if (isNightTime()) {
+                        // Nighttime (10 PM - 8 AM) uses 20-minute intervals
+                        nextPollMs = 20 * 60 * 1000; // 20 minutes
+                        pollReason = 'nighttime (20m)';
+                    } else if (isTuesdayOrWednesday()) {
+                        // Tuesday/Wednesday uses 20-minute intervals
+                        nextPollMs = 20 * 60 * 1000; // 20 minutes
+                        pollReason = 'Tuesday/Wednesday (20m)';
+                    } else {
+                        // Default to 4-minute intervals
+                        nextPollMs = 4 * 60 * 1000; // 4 minutes
+                        pollReason = 'default (4m)';
+                    }
                     
                     // If we have an active session with an end time
                     if (floatStatus.status === 3 && floatDevice.sessionEndTime) {

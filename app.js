@@ -13,13 +13,22 @@ logger.level = options.loggerLevel;
 logger.info("FloatPod automation start" + options.loggerLevel);
 logger.error("FloatPod automation error start" + options.loggerLevel);
 const lightFanService = require('./lightFanService.js')(got,logger,options);
-require('./cronService.js')(options,got,logger,lightFanService);
+
+// Track last color update time
+let lastColorUpdate = null;
+
+// Pass lastColorUpdate getter to cronService
+const cronService = require('./cronService.js')(options, got, logger, lightFanService, () => lastColorUpdate);
 
 app.get('/', function (req, res) {
     res.send('200');
 });
 
 app.post('/color-'+options.webhookKey, function (req, res) { 
+	// Update last color update time
+	lastColorUpdate = Date.now();
+	logger.debug(`Color update received at: ${new Date(lastColorUpdate).toISOString()}`);
+	
 	var roomColor = null;
 	var rgbColor = null;
 	logger.debug('req',req.body);
