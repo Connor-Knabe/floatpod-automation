@@ -136,9 +136,9 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
                         nextPollMs = 50 * 60 * 1000; // 50 minutes
                         pollReason = 'nighttime (50m)';
                     } else if (isTuesdayOrWednesday()) {
-                        // Tuesday/Wednesday uses 20-minute intervals
-                        nextPollMs = 20 * 60 * 1000; // 20 minutes
-                        pollReason = 'Tuesday/Wednesday (20m)';
+                        // Tuesday/Wednesday uses 40-minute intervals
+                        nextPollMs = 40 * 60 * 1000; // 40 minutes
+                        pollReason = 'Tuesday/Wednesday (40m)';
                     } else {
                         // Default to 4-minute intervals
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
