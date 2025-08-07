@@ -50,6 +50,17 @@ app.get('/', function (req, res) {
     res.send('200');
 });
 
+
+app.get('/motion-'+options.webhookKey, function (req, res) { 
+	lastColorUpdate = Date.now();
+	const chicagoTime = new Date(lastColorUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+	logger.debug(`Motion update received at: ${chicagoTime} (Chicago)`);
+
+    res.send('200');
+});
+
+
+
 app.post('/color-'+options.webhookKey, function (req, res) { 
 	// Update last color update time
 	lastColorUpdate = Date.now();
