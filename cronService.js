@@ -132,9 +132,9 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
                         pollReason = 'recent color update (4m)';
                     } else if (isNightTime()) {
-                        // Nighttime (10 PM - 8 AM) uses 20-minute intervals
-                        nextPollMs = 20 * 60 * 1000; // 20 minutes
-                        pollReason = 'nighttime (20m)';
+                        // Nighttime (10 PM - 8 AM) uses 50-minute intervals
+                        nextPollMs = 50 * 60 * 1000; // 50 minutes
+                        pollReason = 'nighttime (50m)';
                     } else if (isTuesdayOrWednesday()) {
                         // Tuesday/Wednesday uses 20-minute intervals
                         nextPollMs = 20 * 60 * 1000; // 20 minutes
