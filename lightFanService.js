@@ -1,5 +1,3 @@
-const { urlencoded } = require("body-parser");
-
 module.exports = function (got, logger, options) {
     async function turnLightOn(deviceName, device) {
         var defaultColor = options.defaultRGBColor;

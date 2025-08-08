@@ -8,10 +8,10 @@ module.exports = function (options) {
 			"hex": "#000000",
 			"name": "Black",
 		},
-		{
-			"hex": "#808080",
-			"name": "White",
-		},
+                {
+                        "hex": "#808080",
+                        "name": "Gray",
+                },
 
 		{
 			"hex": "#ff0000",
