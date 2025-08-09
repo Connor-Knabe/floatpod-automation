@@ -128,9 +128,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     let pollReason;
                     
                     if (shouldUseFastPolling()) {
-                        // Fast polling for 2 hours after color update
+                        // Fast polling for 2 hours after webhook update
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
-                        pollReason = 'recent color update (4m)';
+                        pollReason = 'recent webhook update (4m)';
                     } else if (isNightTime()) {
                         // Nighttime (10 PM - 8 AM) uses 50-minute intervals
                         nextPollMs = 50 * 60 * 1000; // 50 minutes
@@ -140,9 +140,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         nextPollMs = 40 * 60 * 1000; // 40 minutes
                         pollReason = 'Tuesday/Wednesday (40m)';
                     } else {
-                        // Default to 4-minute intervals
-                        nextPollMs = 4 * 60 * 1000; // 4 minutes
-                        pollReason = 'default (4m)';
+                        // Default to 10-minute intervals
+                        nextPollMs = 10 * 60 * 1000; // 10 minutes
+                        pollReason = 'default (10m)';
                     }
                     
                     // If we have an active session with an end time
@@ -167,8 +167,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         const seconds = totalSeconds % 60;
                         logger.debug(`${key}: Time until music starts: ${minutes}m ${seconds}s`);
                         
-                        // If within 1 minute of music start, poll every 20 seconds
-                        if (timeToMusicStart > 0 && timeToMusicStart < 60 * 1000) {
+                        // If within 6 minutes of music start, poll every 20 seconds
+                        if (timeToMusicStart > 0 && timeToMusicStart < 6 * 60 * 1000) {
                             nextPollMs = 20 * 1000; // 20 seconds
                             pollReason = 'music starting soon (20s)';
                         } else {

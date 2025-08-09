@@ -59,6 +59,14 @@ app.get('/motion-'+options.webhookKey, function (req, res) {
     res.send('200');
 });
 
+app.get('/checkout-'+options.webhookKey, function (req, res) { 
+	lastWebhookUpdate = Date.now();
+	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+	logger.debug(`Checkout update received at: ${chicagoTime} (Chicago)`);
+
+    res.send('200');
+});
+
 
 
 app.post('/color-'+options.webhookKey, function (req, res) { 
