@@ -69,9 +69,10 @@ module.exports = function(got,logger,options,lightFanService) {
 
     
             if(activeSessionNonLast5Min){
-                if(timeRemainingMins !== null && timeRemainingMins <= minsToPlayMusicBeforeEndSession){
+                if(timeRemainingMins !== null && timeRemainingMins <= minsToPlayMusicBeforeEndSession && !floatDevice.endScheduleTriggered){
                     logger.info(`${deviceName}: turning light and fan on end-of-session schedule`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
+                    floatDevice.endScheduleTriggered = true;
                     floatDevice.minutesInSession = 1;
                 } else if (floatDevice.minutesInSession == 0) {
                     // Record absolute session end time at the start of an active session
@@ -83,7 +84,8 @@ module.exports = function(got,logger,options,lightFanService) {
                     logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
                     lightFanService.turnLightOff(deviceName, floatDevice);
-                    floatDevice.minutesInSession = 1
+                    floatDevice.minutesInSession = 1;
+                    floatDevice.endScheduleTriggered = false;
                 }
                 logger.debug(`${deviceName}: floatDevice.minutesInSession ${floatDevice.minutesInSession}`);
 
@@ -96,6 +98,7 @@ module.exports = function(got,logger,options,lightFanService) {
         } else if (deviceNewSession){
             //only want to turn off fan once when in new session screen
             logger.debug(`${deviceName}: mins in session now ${floatDevice.minutesInSession}`);
+            floatDevice.endScheduleTriggered = false;
             if(floatDevice.minutesInSession==0){
                 logger.info(`${deviceName}: turning fan off when in new session screen`);
                 lightFanService.turnFanOff(deviceName, floatDevice);
@@ -109,6 +112,7 @@ module.exports = function(got,logger,options,lightFanService) {
             floatDevice.minutesInSession = 0;
             floatDevice.sessionEndTime = null; // clear stored end time when idle
             floatDevice.sessionDuration = null; // clear stored duration
+            floatDevice.endScheduleTriggered = false;
             await checkForAllDevicesInSession();
         }
     }
