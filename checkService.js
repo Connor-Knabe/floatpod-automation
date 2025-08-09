@@ -57,7 +57,6 @@ module.exports = function(got,logger,options,lightFanService) {
             }
             
             // Calculate remaining time based on absolute end time
-            // Calculate remaining time based on absolute end time
             const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
             const timeRemainingMs = floatDevice.sessionEndTime ? floatDevice.sessionEndTime.getTime() - Date.now() : null;
             const timeRemainingMins = timeRemainingMs !== null ? timeRemainingMs / 60000 : null;
