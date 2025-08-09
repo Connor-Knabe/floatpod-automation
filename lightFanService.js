@@ -45,9 +45,16 @@ module.exports = function (got, logger, options) {
         logger.debug("turnLightAndFanOnOffTimer", deviceName);
         await turnFanOn(deviceName, floatDevice);
         await turnLightOn(deviceName, floatDevice);
+        
+        // Set flag to indicate light and fan are on, which will trigger 4-minute polling
+        floatDevice.lightAndFanOnTime = Date.now();
+        logger.info(`${deviceName}: Light and fan turned on, 4-minute polling activated`);
+        
         clearTimeout(floatDevice.postSessionLightFanTimeout);
         floatDevice.postSessionLightFanTimeout = setTimeout(async () => {
-            logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins}`);
+            logger.info(`${deviceName}: turning fan off after ${floatDevice.postSessionLightFanTimeoutMins} minutes`);
+            // Clear the flag when turning off the light and fan
+            floatDevice.lightAndFanOnTime = null;
             await turnFanOff(deviceName, floatDevice)
             await turnLightOff(deviceName, floatDevice);
 

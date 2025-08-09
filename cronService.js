@@ -127,7 +127,15 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     let nextPollMs;
                     let pollReason;
                     
-                    if (shouldUseFastPolling()) {
+                    // Check if light and fan are on (within the last 2 hours)
+                    const lightAndFanOnTime = floatDevice.lightAndFanOnTime;
+                    const lightAndFanOn = lightAndFanOnTime && (Date.now() - lightAndFanOnTime < 2 * 60 * 60 * 1000);
+                    
+                    if (lightAndFanOn) {
+                        // Use 4-minute polling when light and fan are on
+                        nextPollMs = 4 * 60 * 1000; // 4 minutes
+                        pollReason = 'light and fan are on (4m)';
+                    } else if (shouldUseFastPolling()) {
                         // Fast polling for 2 hours after webhook update
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
                         pollReason = 'recent webhook update (4m)';
