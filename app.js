@@ -14,13 +14,13 @@ logger.info("FloatPod automation start" + options.loggerLevel);
 logger.error("FloatPod automation error start" + options.loggerLevel);
 const lightFanService = require('./lightFanService.js')(got,logger,options);
 
-// Track last color update time and last session end time
-let lastColorUpdate = null;
+// Track last webhook update time and last session end time
+let lastWebhookUpdate = null;
 let lastSessionEndTime = null;
 
 // Pass getters to cronService
 const cronService = require('./cronService.js')(options, got, logger, lightFanService, 
-    () => lastColorUpdate,  // getLastColorUpdate
+    () => lastWebhookUpdate,  // getLastWebhookUpdate
     () => lastSessionEndTime,  // getLastSessionEndTime
     (time) => { 
         lastSessionEndTime = time; 
@@ -52,8 +52,8 @@ app.get('/', function (req, res) {
 
 
 app.get('/motion-'+options.webhookKey, function (req, res) { 
-	lastColorUpdate = Date.now();
-	const chicagoTime = new Date(lastColorUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+	lastWebhookUpdate = Date.now();
+	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 	logger.debug(`Motion update received at: ${chicagoTime} (Chicago)`);
 
     res.send('200');
@@ -63,8 +63,8 @@ app.get('/motion-'+options.webhookKey, function (req, res) {
 
 app.post('/color-'+options.webhookKey, function (req, res) { 
 	// Update last color update time
-	lastColorUpdate = Date.now();
-	const chicagoTime = new Date(lastColorUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
+	lastWebhookUpdate = Date.now();
+	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 	logger.debug(`Color update received at: ${chicagoTime} (Chicago)`);
 	
 	var roomColor = null;

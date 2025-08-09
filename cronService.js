@@ -1,4 +1,4 @@
-module.exports = function(options, got, logger, lightFanService, getLastColorUpdate, getLastSessionEndTime, setLastSessionEndTime) {
+module.exports = function(options, got, logger, lightFanService, getLastWebhookUpdate, getLastSessionEndTime, setLastSessionEndTime) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     
@@ -25,11 +25,11 @@ module.exports = function(options, got, logger, lightFanService, getLastColorUpd
     }
     
     function shouldUseFastPolling() {
-        // Check for recent color updates (within 2 hours)
-        const lastColorUpdate = getLastColorUpdate ? getLastColorUpdate() : null;
-        if (lastColorUpdate) {
+        // Check for recent webhook updates (within 2 hours)
+        const lastWebhookUpdate = getLastWebhookUpdate ? getLastWebhookUpdate() : null;
+        if (lastWebhookUpdate) {
             const twoHoursAgo = Date.now() - (120 * 60 * 1000);
-            if (lastColorUpdate > twoHoursAgo) {
+            if (lastWebhookUpdate > twoHoursAgo) {
                 return true;
             }
         }
