@@ -120,6 +120,22 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     }
 
                     // Process the status update
+                    const previousStatus = floatDevice.status;
+                    const timeUntilEndMs =
+                        floatDevice.sessionEndTime?.getTime() - Date.now();
+                    if (
+                        floatStatus.status === 0 &&
+                        previousStatus === 3 &&
+                        floatDevice.sessionEndTime &&
+                        timeUntilEndMs > 0 &&
+                        timeUntilEndMs <= 10 * 60 * 1000
+                    ) {
+                        const minsUntilEnd = Math.ceil(timeUntilEndMs / 60000);
+                        logger.warn(
+                            `${key}: Received idle status but session end time ${formatChicagoTime(floatDevice.sessionEndTime)} is within ${minsUntilEnd} minutes - assuming session still active`
+                        );
+                        floatStatus.status = 3;
+                    }
                     logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
                     await checkService.checkFloatStatus(key, floatDevice, floatStatus, silentStatus);
                     
