@@ -46,6 +46,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         if (lastWebhookUpdate) {
             const twoHoursAgo = Date.now() - (120 * 60 * 1000);
             if (lastWebhookUpdate > twoHoursAgo) {
+                logger.debug('Using fast polling (recent webhook update)');
                 return true;
             }
         }
@@ -166,9 +167,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
                         pollReason = 'light and fan are on (4m)';
                     } else if (shouldUseFastPolling()) {
-                        // Fast polling for 2 hours after webhook update
+                        // Fast polling webhook, boot, session
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
-                        pollReason = 'recent webhook update (4m)';
+                        pollReason = 'recent activity (4m)';
                     } else if (isNightTime()) {
                         // Nighttime (10 PM - 8 AM) uses 50-minute intervals
                         nextPollMs = 50 * 60 * 1000; // 50 minutes
