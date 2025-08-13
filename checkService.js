@@ -76,9 +76,17 @@ module.exports = function(got,logger,options,lightFanService) {
                 } else if (floatDevice.minutesInSession == 0) {
                     // Record absolute session end time at the start of an active session
                     const now = Date.now();
+                    // Get session delay in milliseconds (convert from seconds to ms)
+                    const sessionDelayMs = Number(floatStatus.session_delay_before || 0) * 1000;
                     const sessionDurationMs = Number(floatStatus.duration) * 1000; // duration reported in seconds
-                    floatDevice.sessionEndTime = new Date(now + sessionDurationMs);
+                    
+                    // Add session delay to the end time to account for delayed start
+                    floatDevice.sessionEndTime = new Date(now + sessionDurationMs + sessionDelayMs);
+                    
                     logger.debug(`${deviceName}: sessionEndTime set (Chicago) ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
+                    if (sessionDelayMs > 0) {
+                        logger.info(`${deviceName}: Accounting for session delay of ${sessionDelayMs/1000} seconds in end time calculation`);
+                    }
 
                     logger.info(`${deviceName}: turning fan off 0 mins into active session`);
                     lightFanService.turnFanOff(deviceName, floatDevice);
