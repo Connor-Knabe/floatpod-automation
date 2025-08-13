@@ -4,6 +4,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     
     // Track the last time any session ended (for rolling 1-hour fast polling window)
     let lastSessionEndTime = 0;
+    
+    // Track when the service started for initial fast polling
+    const serviceStartTime = Date.now();
     const deviceIntervals = {};
     
     function formatChicagoTime(date) {
@@ -26,6 +29,12 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     }
     
     function shouldUseFastPolling() {
+        // Check if we're within 1 hour of service start
+        if (Date.now() - serviceStartTime < 60 * 60 * 1000) {
+            logger.debug('Using fast polling (first hour after boot)');
+            return true;
+        }
+        
         // Check if we're within 1 hour of the last session end (rolling window)
         if (Date.now() - lastSessionEndTime < 60 * 60 * 1000) {
             logger.debug('Using fast polling (within 1hr of last session end)');
@@ -281,12 +290,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const job = new cron(
         '0 * * * * *',
         async () => {
-            // First, check if any device is in session on boot (only if we haven't set the bootFastPollingEndTime yet)
-            if (bootFastPollingEndTime === 0) {
-                await checkAnyDeviceInSession();
-            }
-            
-            // Then check all devices
+            // Check all devices on each cron tick
             for (const key in options.floatDevices) {
                 if (options.floatDevices.hasOwnProperty(key) && !deviceIntervals[key]) {
                     checkDevice(key);
