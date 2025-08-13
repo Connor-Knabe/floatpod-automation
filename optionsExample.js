@@ -1,6 +1,11 @@
 module.exports.apiKey = 'API_KEY_GOES_HERE';
 module.exports.defaultRGBColor = '255,127,0';
 module.exports.defaultSaunaRGBColor = '255,127,0';
+// Default hex/name pair used by colorService when no color is specified
+module.exports.defaultColor = {
+    hex: '#ff7f00',
+    name: 'Orange'
+};
 module.exports.webhookKey = 'WEBHOOK_KEY_GOES_HERE';
 module.exports.loggerLevel = 'debug';
 const iftttApiKey = 'IFTTT_API_KEY_GOES_HERE';
