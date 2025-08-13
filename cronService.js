@@ -2,7 +2,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     
-    // Store the active interval for each device
+    // Track the last time any session ended (for rolling 1-hour fast polling window)
+    let lastSessionEndTime = 0;
     const deviceIntervals = {};
     
     function formatChicagoTime(date) {
@@ -25,20 +26,17 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     }
     
     function shouldUseFastPolling() {
+        // Check if we're within 1 hour of the last session end (rolling window)
+        if (Date.now() - lastSessionEndTime < 60 * 60 * 1000) {
+            logger.debug('Using fast polling (within 1hr of last session end)');
+            return true;
+        }
+        
         // Check for recent webhook updates (within 2 hours)
         const lastWebhookUpdate = getLastWebhookUpdate ? getLastWebhookUpdate() : null;
         if (lastWebhookUpdate) {
             const twoHoursAgo = Date.now() - (120 * 60 * 1000);
             if (lastWebhookUpdate > twoHoursAgo) {
-                return true;
-            }
-        }
-        
-        // Check for recent session end (within 2 hours)
-        const sessionEndTime = getLastSessionEndTime ? getLastSessionEndTime() : null;
-        if (sessionEndTime) {
-            const twoHoursAgo = Date.now() - (120 * 60 * 1000);
-            if (sessionEndTime > twoHoursAgo) {
                 return true;
             }
         }
@@ -80,12 +78,19 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     }
                     logger.debug(`${key}: Session status - Status: ${floatStatus.status || 'N/A'}, Duration: ${durationText}`);
                     
-                    // Update last session end time when a session is active
+                    // Update last session end time when a session ends
                     if (setLastSessionEndTime && floatDevice.sessionEndTime) {
                         const sessionEndTime = new Date(floatDevice.sessionEndTime);
-                        if (!isNaN(sessionEndTime.getTime()) && sessionEndTime.getTime() > 0) {
-                            logger.debug(`${key}: Updating last session end time to ${formatChicagoTime(sessionEndTime)}`);
-                            setLastSessionEndTime(sessionEndTime.getTime());
+                        const sessionEndTimestamp = sessionEndTime.getTime();
+                        
+                        if (!isNaN(sessionEndTimestamp) && sessionEndTimestamp > 0) {
+                            // Update the rolling window for fast polling
+                            lastSessionEndTime = Date.now();
+                            logger.debug(`${key}: Session ended, fast polling active until ${new Date(lastSessionEndTime + (60 * 60 * 1000)).toLocaleString()}`);
+                            
+                            // Also update the session end time for other components
+                            setLastSessionEndTime(sessionEndTimestamp);
+                            logger.debug(`${key}: Updated last session end time to ${formatChicagoTime(sessionEndTime)}`);
                         } else {
                             logger.debug(`${key}: Invalid session end time (${floatDevice.sessionEndTime}), not updating`);
                         }
@@ -243,13 +248,47 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         }
     }
     
+    // Function to check if any device is in session
+    async function checkAnyDeviceInSession() {
+        let anyDeviceInSession = false;
+        
+        for (const [key, device] of Object.entries(options.floatDevices || {})) {
+            try {
+                logger.debug(`Checking if ${key} is in session...`);
+                const data = await got.post(device.url, {
+                    form: {
+                        "api_key": options.apiKey,
+                        "command": "get_session_status"
+                    },
+                    timeout: 5000
+                });
+                
+                const status = data?.body ? JSON.parse(JSON.parse(data.body).msg) : null;
+                if (status?.status === 3) { // 3 means active session
+                    logger.info(`${key} is in an active session`);
+                    anyDeviceInSession = true;
+                    break;
+                }
+            } catch (error) {
+                logger.error(`Error checking session status for ${key}:`, error);
+            }
+        }
+        
+        return anyDeviceInSession;
+    }
+    
     // Initialize the cron job to check all devices every minute
-    var job = new cron(
+    const job = new cron(
         '0 * * * * *',
-        () => {
+        async () => {
+            // First, check if any device is in session on boot (only if we haven't set the bootFastPollingEndTime yet)
+            if (bootFastPollingEndTime === 0) {
+                await checkAnyDeviceInSession();
+            }
+            
+            // Then check all devices
             for (const key in options.floatDevices) {
-                // Only start a new check if one isn't already in progress
-                if (!deviceIntervals[key]) {
+                if (options.floatDevices.hasOwnProperty(key) && !deviceIntervals[key]) {
                     checkDevice(key);
                 }
             }
@@ -259,8 +298,24 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         'America/Chicago'
     );
     
+    // Initial check on startup
+    (async () => {
+        logger.info('Performing initial device status check...');
+        await checkAnyDeviceInSession();
+        
+        // Start initial checks for all devices
+        for (const key in options.floatDevices) {
+            if (options.floatDevices.hasOwnProperty(key)) {
+                checkDevice(key);
+            }
+        }
+        
+        logger.info('Initial device checks completed');
+    })();
+    
     // Clean up intervals on exit
     process.on('SIGINT', () => {
+        logger.info('Shutting down...');
         for (const interval of Object.values(deviceIntervals)) {
             clearInterval(interval);
         }
@@ -269,5 +324,6 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     });
     
     job.start();
+    logger.info('Cron job started');
     return job;
 };
