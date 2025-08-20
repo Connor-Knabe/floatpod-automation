@@ -191,7 +191,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
  
                         var musicLeadTime = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
 
-                        if(floatStatus?.music_song.includes("_DS_")){
+                        if(floatStatus?.music_song?.includes("_DS_")){
                             musicLeadTime = 5;
                         }
 

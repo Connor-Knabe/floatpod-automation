@@ -38,7 +38,7 @@ module.exports = function(got,logger,options,lightFanService) {
     
             var minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
 
-            if(floatStatus?.music_song.includes("_DS_")){
+            if(floatStatus?.music_song?.includes("_DS_")){
                 minsToPlayMusicBeforeEndSession = 5;
             }
 
