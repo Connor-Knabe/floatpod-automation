@@ -9,7 +9,6 @@ module.exports = function(got,logger,options,lightFanService) {
         floatDevice.status = floatStatus.status;
         floatDevice.silentStatus = silentStatus;
 
-      
         const minsBeforeCountInSession = -1;
         var devicesInSession = await anyDevicesInSession(minsBeforeCountInSession);
         if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
@@ -18,11 +17,11 @@ module.exports = function(got,logger,options,lightFanService) {
             logger.debug("turning hallway light strip on");
             await got.post(options.ifttt.noDeviceInSessionUrl, {
                 json: {
-                    value1: ""
+                    value1: "",
                 }
             });
         }
-        
+
         if(deviceActiveSession){
             if(shouldTurnHallwayLightsOff && floatDevice.minutesInSession > 10){
             // if(shouldTurnHallwayLightsOff){
@@ -30,72 +29,76 @@ module.exports = function(got,logger,options,lightFanService) {
                 logger.debug("turning hallway light strip off");
                 await got.post(options.ifttt.atLeastOneDeviceInSessionUrl, {
                     json: {
-                        value1: ""
+                        value1: "",
                     }
                 });
             }
-        
-    
+
             var minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
 
             if(floatStatus?.music_song?.includes("_DS_")){
                 minsToPlayMusicBeforeEndSession = 5;
             }
 
-            // Detect if the controller reports a new duration mid-session (e.g., session extended)
-            const currentDuration = Number(floatStatus.duration);
-            if (floatDevice.sessionDuration === undefined) {
-                floatDevice.sessionDuration = currentDuration;
+            // Use controller-provided end_time (includes delay)
+            let newEndTime = null;
+            if (floatStatus.end_time) {
+                const endTimeNum = Number(floatStatus.end_time);
+                if (!isNaN(endTimeNum)) {
+                    newEndTime = new Date(endTimeNum * 1000);
+                } else {
+                    const parsed = new Date(floatStatus.end_time);
+                    if (!isNaN(parsed.getTime())) {
+                        newEndTime = parsed;
+                    }
+                }
             }
-            if (currentDuration !== floatDevice.sessionDuration) {
-                logger.info(`${deviceName}: session duration changed from ${floatDevice.sessionDuration} to ${currentDuration} seconds – updating timers`);
-                floatDevice.sessionDuration = currentDuration;
-                // Re-calculate absolute end time based on remaining minutes
-                const remainingMinutes = currentDuration / 60 - floatDevice.minutesInSession;
-                floatDevice.sessionEndTime = new Date(Date.now() + remainingMinutes * 60 * 1000);
-                logger.debug(`${deviceName}: sessionEndTime updated (Chicago) ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
+
+            if (newEndTime) {
+                if (!floatDevice.sessionEndTime) {
+                    logger.debug(`${deviceName}: sessionEndTime set (Chicago) ${newEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
+                    floatDevice.sessionEndTime = newEndTime;
+                    logger.info(`${deviceName}: turning fan off 0 mins into active session`);
+                    lightFanService.turnFanOff(deviceName, floatDevice);
+                    lightFanService.turnLightOff(deviceName, floatDevice);
+                    floatDevice.minutesInSession = 1;
+                    floatDevice.endScheduleTriggered = false;
+                } else if (newEndTime.getTime() !== floatDevice.sessionEndTime.getTime()) {
+                    logger.info(`${deviceName}: session end time changed from ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })} to ${newEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
+                    floatDevice.sessionEndTime = newEndTime;
+                    floatDevice.endScheduleTriggered = false;
+                }
+            } else if (!floatDevice.sessionEndTime) {
+                // Fallback to manual calculation if end_time not provided
+                const now = Date.now();
+                const sessionDurationMs = Number(floatStatus.duration) * 1000;
+                floatDevice.sessionEndTime = new Date(now + sessionDurationMs);
+                logger.debug(`${deviceName}: sessionEndTime set (Chicago) ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
+                logger.info(`${deviceName}: turning fan off 0 mins into active session`);
+                lightFanService.turnFanOff(deviceName, floatDevice);
+                lightFanService.turnLightOff(deviceName, floatDevice);
+                floatDevice.minutesInSession = 1;
+                floatDevice.endScheduleTriggered = false;
             }
-            
-            // Calculate remaining time based on absolute end time
-            const activeSessionNonLast5Min = floatStatus.duration/60 != 5;
+
             const timeRemainingMs = floatDevice.sessionEndTime ? floatDevice.sessionEndTime.getTime() - Date.now() : null;
             const timeRemainingMins = timeRemainingMs !== null ? timeRemainingMs / 60000 : null;
-    
+            const activeSessionNonLast5Min = timeRemainingMins === null || timeRemainingMins > 5;
+
             logger.debug(`${deviceName}: mins in session ${floatDevice.minutesInSession}`);
             logger.debug(`${deviceName}: music will play ${minsToPlayMusicBeforeEndSession} mins before session over`);
+            if (timeRemainingMins !== null) {
+                logger.debug(`${deviceName}: time remaining mins ${timeRemainingMins}`);
+            }
 
-            logger.debug(`${deviceName}: duration mins ${floatStatus.duration/60}`);
-
-    
             if(activeSessionNonLast5Min){
                 if(timeRemainingMins !== null && timeRemainingMins <= minsToPlayMusicBeforeEndSession && !floatDevice.endScheduleTriggered){
                     logger.info(`${deviceName}: turning light and fan on end-of-session schedule`);
                     await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName,floatDevice);
                     floatDevice.endScheduleTriggered = true;
                     floatDevice.minutesInSession = 1;
-                } else if (!floatDevice.sessionEndTime) {
-                    // Record absolute session end time at the start of an active session
-                    const now = Date.now();
-                    // Get session delay in milliseconds (convert from seconds to ms)
-                    const sessionDelayMs = Number(floatStatus.session_delay_before || 0) * 1000;
-                    const sessionDurationMs = Number(floatStatus.duration) * 1000; // duration reported in seconds
-
-                    // Add session delay to the end time to account for delayed start
-                    floatDevice.sessionEndTime = new Date(now + sessionDurationMs + sessionDelayMs);
-
-                    logger.debug(`${deviceName}: sessionEndTime set (Chicago) ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
-                    if (sessionDelayMs > 0) {
-                        logger.info(`${deviceName}: Accounting for session delay of ${sessionDelayMs/1000} seconds in end time calculation`);
-                    }
-
-                    logger.info(`${deviceName}: turning fan off 0 mins into active session`);
-                    lightFanService.turnFanOff(deviceName, floatDevice);
-                    lightFanService.turnLightOff(deviceName, floatDevice);
-                    floatDevice.minutesInSession = 1;
-                    floatDevice.endScheduleTriggered = false;
                 }
                 logger.debug(`${deviceName}: floatDevice.minutesInSession ${floatDevice.minutesInSession}`);
-
                 floatDevice.minutesInSession++;
             } else if(floatDevice.minutesInSession > -1){
                 logger.info(`${deviceName} turning light and fan on manual 5 min timer`);
@@ -118,7 +121,6 @@ module.exports = function(got,logger,options,lightFanService) {
             // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
             floatDevice.sessionEndTime = null; // clear stored end time when idle
-            floatDevice.sessionDuration = null; // clear stored duration
             floatDevice.endScheduleTriggered = false;
             await checkForAllDevicesInSession();
         }
@@ -140,9 +142,9 @@ module.exports = function(got,logger,options,lightFanService) {
                 floatDevice.minutesInSession++;
                 logger.debug(`checkForOverNightSession mins in session ${floatDevice.minutesInSession}`);
             }
-            
-        } 
-    }   
+
+        }
+    }
 
     async function anyDevicesInSession(minsBeforeCountInSession){
         var devicesInSession = "";
@@ -175,7 +177,7 @@ module.exports = function(got,logger,options,lightFanService) {
         }
         return devicesNotInSession;
     }
-    
+
     async function checkForAllDevicesInSession(){
         const minsBeforeCountInSession = options.minsInSessionBeforeAlert;
         const devicesInSession = await anyDevicesInSession(minsBeforeCountInSession);
