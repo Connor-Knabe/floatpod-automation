@@ -8,6 +8,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     // Track when the service started for initial fast polling
     const serviceStartTime = Date.now();
     const deviceIntervals = {};
+    const deviceLogCounts = {};
     
     function formatChicagoTime(date) {
         return date.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false });
@@ -28,40 +29,44 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         return day === 2 || day === 3; // 2 = Tuesday, 3 = Wednesday
     }
     
-    function shouldUseFastPolling() {
+    function shouldUseFastPolling(debug) {
         // Check if we're within 1 hour of service start
         if (Date.now() - serviceStartTime < 60 * 60 * 1000) {
-            logger.debug('Using fast polling (first hour after boot)');
+            debug('Using fast polling (first hour after boot)');
             return true;
         }
-        
+
         // Check if we're within 1 hour of the last session end (rolling window)
         if (Date.now() - lastSessionEndTime < 60 * 60 * 1000) {
-            logger.debug('Using fast polling (within 1hr of last session end)');
+            debug('Using fast polling (within 1hr of last session end)');
             return true;
         }
-        
+
         // Check for recent webhook updates (within 2 hours)
         const lastWebhookUpdate = getLastWebhookUpdate ? getLastWebhookUpdate() : null;
         if (lastWebhookUpdate) {
             const twoHoursAgo = Date.now() - (120 * 60 * 1000);
             if (lastWebhookUpdate > twoHoursAgo) {
-                logger.debug('Using fast polling (recent webhook update)');
+                debug('Using fast polling (recent webhook update)');
                 return true;
             }
         }
-        
+
         return false;
     }
     
     async function checkDevice(key) {
         const floatDevice = options.floatDevices[key];
+        deviceLogCounts[key] = (deviceLogCounts[key] || 0) + 1;
+        const logThisRun = deviceLogCounts[key] % 2 === 1;
+        const debug = logThisRun ? (...args) => logger.debug(...args) : () => {};
         const startTime = Date.now();
-        logger.debug(`=== Starting check for ${key} at ${formatChicagoTime(new Date())} (Chicago) ===`);
+        let nextPollMs = 0;
+        debug(`=== Starting check for ${key} at ${formatChicagoTime(new Date())} (Chicago) ===`);
         
         try {
             // Log before making API call
-            logger.debug(`${key}: Making API call to get session status`);
+            debug(`${key}: Making API call to get session status`);
             
             // Make the API call to get session status
             const data = await got.post(floatDevice.url, {
@@ -86,7 +91,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                             durationText = `${minutes}m ${seconds}s`;
                         }
                     }
-                    logger.debug(`${key}: Session status - Status: ${floatStatus.status || 'N/A'}, Duration: ${durationText}`);
+                    debug(`${key}: Session status - Status: ${floatStatus.status || 'N/A'}, Duration: ${durationText}`);
                     
                     // Update last session end time when a session ends
                     if (setLastSessionEndTime && floatDevice.sessionEndTime) {
@@ -96,18 +101,18 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         if (!isNaN(sessionEndTimestamp) && sessionEndTimestamp > 0) {
                             // Update the rolling window for fast polling
                             lastSessionEndTime = Date.now();
-                            logger.debug(`${key}: Session ended, fast polling active until ${new Date(lastSessionEndTime + (60 * 60 * 1000)).toLocaleString()}`);
+                            debug(`${key}: Session ended, fast polling active until ${new Date(lastSessionEndTime + (60 * 60 * 1000)).toLocaleString()}`);
                             
                             // Also update the session end time for other components
                             setLastSessionEndTime(sessionEndTimestamp);
-                            logger.debug(`${key}: Updated last session end time to ${formatChicagoTime(sessionEndTime)}`);
+                            debug(`${key}: Updated last session end time to ${formatChicagoTime(sessionEndTime)}`);
                         } else {
-                            logger.debug(`${key}: Invalid session end time (${floatDevice.sessionEndTime}), not updating`);
+                            debug(`${key}: Invalid session end time (${floatDevice.sessionEndTime}), not updating`);
                         }
                     }
                     
                     // Get silence status in parallel
-                    logger.debug(`${key}: Getting silence status`);
+                    debug(`${key}: Getting silence status`);
                     const silentData = await got.post(floatDevice.url, {
                         form: {
                             "api_key": options.apiKey,
@@ -120,7 +125,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     try {
                         silentStatus = silentData ? JSON.parse(silentData.body) : null;
                         silentStatus = silentStatus ? silentStatus.msg : null;
-                        logger.debug(`${key}: Silence status: ${silentStatus}`);
+                        debug(`${key}: Silence status: ${silentStatus}`);
                     } catch (ex) {
                         logger.error(`${key}: failed to parse silent status response`, ex);
                     }
@@ -130,8 +135,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         const now = new Date();
                         const timeUntilEnd = floatDevice.sessionEndTime - now;
                         const minsUntilEnd = Math.ceil(timeUntilEnd / (60 * 1000));
-                        logger.debug(`${key}: Session end time: ${formatChicagoTime(floatDevice.sessionEndTime)} (Chicago)`);
-                        logger.debug(`${key}: Time until session end: ${minsUntilEnd} minutes`);
+                        debug(`${key}: Session end time: ${formatChicagoTime(floatDevice.sessionEndTime)} (Chicago)`);
+                        debug(`${key}: Time until session end: ${minsUntilEnd} minutes`);
                     }
 
                     // Process the status update
@@ -151,11 +156,10 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         );
                         floatStatus.status = 3;
                     }
-                    logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
+                    debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
                     await checkService.checkFloatStatus(key, floatDevice, floatStatus, silentStatus);
                     
                     // Determine next poll interval based on various conditions
-                    let nextPollMs;
                     let pollReason;
                     
                     // Check if light and fan are on (within the last 2 hours)
@@ -166,7 +170,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         // Use 4-minute polling when light and fan are on
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
                         pollReason = 'light and fan are on (4m)';
-                    } else if (shouldUseFastPolling()) {
+                    } else if (shouldUseFastPolling(debug)) {
                         // Fast polling webhook, boot, session
                         nextPollMs = 4 * 60 * 1000; // 4 minutes
                         pollReason = 'recent activity (4m)';
@@ -200,11 +204,11 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         const timeToMusicStart = musicStartTime - now;
                         
                         // Log timing information
-                        logger.debug(`${key}: Music will start at: ${formatChicagoTime(new Date(musicStartTime))} (Chicago)`);
+                        debug(`${key}: Music will start at: ${formatChicagoTime(new Date(musicStartTime))} (Chicago)`);
                         const totalSeconds = Math.ceil(timeToMusicStart/1000);
                         const minutes = Math.floor(totalSeconds / 60);
                         const seconds = totalSeconds % 60;
-                        logger.debug(`${key}: Time until music starts: ${minutes}m ${seconds}s`);
+                        debug(`${key}: Time until music starts: ${minutes}m ${seconds}s`);
                         
                         // If within 6 minutes of music start, poll every 20 seconds
                         if (timeToMusicStart > 0 && timeToMusicStart < 6 * 60 * 1000) {
@@ -215,23 +219,23 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         }
                     }
                     
-                    logger.debug(`${key}: Next poll in ${nextPollMs/1000}s - ${pollReason}`);
+                    debug(`${key}: Next poll in ${nextPollMs/1000}s - ${pollReason}`);
                     
                     // Log timing information
                     const endTime = Date.now();
                     const processingTime = endTime - startTime;
-                    logger.debug(`${key}: Processing completed in ${processingTime}ms`);
+                    debug(`${key}: Processing completed in ${processingTime}ms`);
                     
                     // Clear any existing interval and set a new one
                     clearInterval(deviceIntervals[key]);
                     const nextCheckMins = (nextPollMs / 60000).toFixed(1);
-                    logger.debug(`${key}: Scheduled next check in ${nextCheckMins} minutes`);
+                    debug(`${key}: Scheduled next check in ${nextCheckMins} minutes`);
                     deviceIntervals[key] = setTimeout(() => checkDevice(key), nextPollMs);
                     
                     // Make health check call
-                    logger.debug(`${key}: Making health check call`);
+                    debug(`${key}: Making health check call`);
                     got.get(floatDevice.healthCheckUrl)
-                        .then(() => logger.debug(`${key}: Health check successful`))
+                        .then(() => debug(`${key}: Health check successful`))
                         .catch(ex => 
                             logger.error(`${key}: Health check failed: ${ex.message}`, ex)
                         );
@@ -244,7 +248,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                 // On error, retry after 1 minute
                 clearInterval(deviceIntervals[key]);
                 const retryTime = Date.now() + 60000;
-                logger.debug(`${key}: Will retry at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
+                nextPollMs = 60000;
+                debug(`${key}: Will retry at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
                 deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
             }
         } catch (ex) {
@@ -253,8 +258,14 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
             // On error, retry after 1 minute
             clearInterval(deviceIntervals[key]);
             const retryTime = Date.now() + 60000;
-            logger.debug(`${key}: Will retry API call at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
+            nextPollMs = 60000;
+            debug(`${key}: Will retry API call at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
             deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
+        }
+
+        if (!logThisRun) {
+            const nextLogTime = Date.now() + nextPollMs;
+            logger.debug(`${key}: Detailed logs skipped this run. Next detailed log expected at ${formatChicagoTime(new Date(nextLogTime))}`);
         }
     }
     
