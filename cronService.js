@@ -9,6 +9,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const serviceStartTime = Date.now();
     const deviceIntervals = {};
     const sessionEndTimeouts = {};
+    const outOfSessionChecks = {};
+
     const deviceLocks = {};
     
     function formatChicagoTime(date) {
@@ -160,8 +162,18 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     }
 
                     if (floatStatus.status !== 3) {
-                        clearTimeout(sessionEndTimeouts[key]);
-                        sessionEndTimeouts[key] = null;
+                        if (sessionEndTimeouts[key]) {
+                            outOfSessionChecks[key] = (outOfSessionChecks[key] || 0) + 1;
+                            logger.debug(`${key}: Out-of-session check count = ${outOfSessionChecks[key]}`);
+                            if (outOfSessionChecks[key] >= 2) {
+                                clearTimeout(sessionEndTimeouts[key]);
+                                sessionEndTimeouts[key] = null;
+                                outOfSessionChecks[key] = 0;
+                                logger.debug(`${key}: Cleared session end timeout after two confirmations`);
+                            }
+                        }
+                    } else {
+                        outOfSessionChecks[key] = 0;
                     }
 
                     logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
@@ -215,6 +227,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                             if (!sessionEndTimeouts[key]) {
                                 sessionEndTimeouts[key] = setTimeout(() => {
                                     logger.debug(`${key}: Session end timeout reached, forcing status check`);
+                                    sessionEndTimeouts[key] = null;
+
                                     clearTimeout(deviceIntervals[key]);
                                     deviceIntervals[key] = null;
                                     checkDevice(key);
