@@ -8,6 +8,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     // Track when the service started for initial fast polling
     const serviceStartTime = Date.now();
     const deviceIntervals = {};
+    const sessionEndTimeouts = {};
+    const outOfSessionChecks = {};
+    const deviceLocks = {};
     
     function formatChicagoTime(date) {
         return date.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false });
@@ -55,10 +58,15 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     }
     
     async function checkDevice(key) {
+        if (deviceLocks[key]) {
+            logger.debug(`${key}: check already in progress, skipping`);
+            return;
+        }
+        deviceLocks[key] = true;
         const floatDevice = options.floatDevices[key];
         const startTime = Date.now();
         logger.debug(`=== Starting check for ${key} at ${formatChicagoTime(new Date())} (Chicago) ===`);
-        
+
         try {
             // Log before making API call
             logger.debug(`${key}: Making API call to get session status`);
@@ -151,6 +159,22 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         );
                         floatStatus.status = 3;
                     }
+
+                    if (floatStatus.status !== 3) {
+                        if (sessionEndTimeouts[key]) {
+                            outOfSessionChecks[key] = (outOfSessionChecks[key] || 0) + 1;
+                            logger.debug(`${key}: Out-of-session check count = ${outOfSessionChecks[key]}`);
+                            if (outOfSessionChecks[key] >= 2) {
+                                clearTimeout(sessionEndTimeouts[key]);
+                                sessionEndTimeouts[key] = null;
+                                outOfSessionChecks[key] = 0;
+                                logger.debug(`${key}: Cleared session end timeout after two confirmations`);
+                            }
+                        }
+                    } else {
+                        outOfSessionChecks[key] = 0;
+                    }
+
                     logger.debug(`${key}: Calling checkFloatStatus with status: ${floatStatus.status}`);
                     await checkService.checkFloatStatus(key, floatDevice, floatStatus, silentStatus);
                     
@@ -184,34 +208,35 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         pollReason = 'default (10m)';
                     }
                     
-                    // If we have an active session with an end time
+                    // If we have an active session with an end time, schedule a timeout
                     if (floatStatus.status === 3 && floatDevice.sessionEndTime) {
                         const now = Date.now();
-
- 
-                        var musicLeadTime = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
-
-                        if(floatStatus?.music_song?.includes("_DS_")){
-                            musicLeadTime = 5;
-                        }
-
-                        musicLeadTime = musicLeadTime * 60 * 1000;
-                        const musicStartTime = floatDevice.sessionEndTime.getTime() - musicLeadTime;
-                        const timeToMusicStart = musicStartTime - now;
-                        
-                        // Log timing information
-                        logger.debug(`${key}: Music will start at: ${formatChicagoTime(new Date(musicStartTime))} (Chicago)`);
-                        const totalSeconds = Math.ceil(timeToMusicStart/1000);
-                        const minutes = Math.floor(totalSeconds / 60);
-                        const seconds = totalSeconds % 60;
-                        logger.debug(`${key}: Time until music starts: ${minutes}m ${seconds}s`);
-                        
-                        // If within 6 minutes of music start, poll every 20 seconds
-                        if (timeToMusicStart > 0 && timeToMusicStart < 6 * 60 * 1000) {
-                            nextPollMs = 20 * 1000; // 20 seconds
-                            pollReason = 'music starting soon (20s)';
-                        } else {
-                            pollReason = 'active session (4m)';
+                        const timeToEnd = floatDevice.sessionEndTime.getTime() - now;
+                        if (timeToEnd > 15 * 60 * 1000) {
+                            // More than 15 minutes away, ensure no timeout is scheduled
+                            if (sessionEndTimeouts[key]) {
+                                clearTimeout(sessionEndTimeouts[key]);
+                                sessionEndTimeouts[key] = null;
+                                logger.debug(`${key}: Cleared session end timeout (>15m away)`);
+                            }
+                            nextPollMs = 10 * 60 * 1000;
+                            pollReason = 'active session (10m)';
+                        } else if (timeToEnd > 0) {
+                            // Within 15 minutes, keep or set the timeout
+                            if (!sessionEndTimeouts[key]) {
+                                sessionEndTimeouts[key] = setTimeout(() => {
+                                    logger.debug(`${key}: Session end timeout reached, forcing status check`);
+                                    sessionEndTimeouts[key] = null;
+                                    clearTimeout(deviceIntervals[key]);
+                                    deviceIntervals[key] = null;
+                                    checkDevice(key);
+                                }, timeToEnd);
+                                logger.debug(`${key}: Scheduled session end check in ${(timeToEnd/60000).toFixed(1)} minutes`);
+                            } else {
+                                logger.debug(`${key}: Session end timeout already scheduled`);
+                            }
+                            nextPollMs = 10 * 60 * 1000;
+                            pollReason = 'active session (10m) with end timeout';
                         }
                     }
                     
@@ -255,6 +280,8 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
             const retryTime = Date.now() + 60000;
             logger.debug(`${key}: Will retry API call at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
             deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
+        } finally {
+            deviceLocks[key] = false;
         }
     }
     
