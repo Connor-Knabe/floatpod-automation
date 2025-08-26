@@ -10,6 +10,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const deviceIntervals = {};
     const sessionEndTimeouts = {};
     const outOfSessionChecks = {};
+
     const deviceLocks = {};
     
     function formatChicagoTime(date) {
@@ -227,6 +228,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                                 sessionEndTimeouts[key] = setTimeout(() => {
                                     logger.debug(`${key}: Session end timeout reached, forcing status check`);
                                     sessionEndTimeouts[key] = null;
+
                                     clearTimeout(deviceIntervals[key]);
                                     deviceIntervals[key] = null;
                                     checkDevice(key);
