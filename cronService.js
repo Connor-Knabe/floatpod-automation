@@ -188,13 +188,13 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     const lightAndFanOn = lightAndFanOnTime && (Date.now() - lightAndFanOnTime < 2 * 60 * 60 * 1000);
                     
                     if (lightAndFanOn) {
-                        // Use 4-minute polling when light and fan are on
-                        nextPollMs = 4 * 60 * 1000; // 4 minutes
-                        pollReason = 'light and fan are on (4m)';
+                        // Use 10-minute polling when light and fan are on
+                        nextPollMs = 10 * 60 * 1000; // 10 minutes
+                        pollReason = 'light and fan are on (10m)';
                     } else if (shouldUseFastPolling()) {
                         // Fast polling webhook, boot, session
-                        nextPollMs = 4 * 60 * 1000; // 4 minutes
-                        pollReason = 'recent activity (4m)';
+                        nextPollMs = 10 * 60 * 1000; // 10 minutes
+                        pollReason = 'recent activity (10m)';
                     } else if (isNightTime()) {
                         // Nighttime (10 PM - 8 AM) uses 50-minute intervals
                         nextPollMs = 50 * 60 * 1000; // 50 minutes
@@ -204,9 +204,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         nextPollMs = 40 * 60 * 1000; // 40 minutes
                         pollReason = 'Tuesday/Wednesday (40m)';
                     } else {
-                        // Default to 10-minute intervals
-                        nextPollMs = 10 * 60 * 1000; // 10 minutes
-                        pollReason = 'default (10m)';
+                        // Default to 20-minute intervals
+                        nextPollMs = 20 * 60 * 1000; // 20 minutes
+                        pollReason = 'default (20m)';
                     }
                     
                     // If we have an active session with an end time, schedule a timeout
