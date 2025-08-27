@@ -1,6 +1,6 @@
-module.exports = function(got,logger,options,lightFanService) {
-    var shouldAlertDeviceInSession = true;
-    var shouldTurnHallwayLightsOff = true;
+module.exports = function(got, logger, options, lightFanService) {
+    let shouldAlertDeviceInSession = true;
+    let shouldTurnHallwayLightsOff = true;
 
     function schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession) {
         if (floatDevice.sessionEndTimer) {
@@ -26,7 +26,6 @@ module.exports = function(got,logger,options,lightFanService) {
     }
 
     async function checkFloatStatus(deviceName,floatDevice,floatStatus, silentStatus){
-        // logger.debug(`${deviceName}: floatStatus ${JSON.stringify(floatStatus)}`);
         const deviceNewSession = floatStatus.status == 1 || floatStatus.status == 2;
         const deviceActiveSession = floatStatus.status==3;
         const idleScreen = floatStatus.status == 0;
@@ -34,7 +33,7 @@ module.exports = function(got,logger,options,lightFanService) {
         floatDevice.silentStatus = silentStatus;
 
         const minsBeforeCountInSession = -1;
-        var devicesInSession = await anyDevicesInSession(minsBeforeCountInSession);
+        let devicesInSession = await anyDevicesInSession(minsBeforeCountInSession);
         if(devicesInSession == "" && !shouldTurnHallwayLightsOff) {
             shouldTurnHallwayLightsOff = true;
             //light strip on
@@ -125,7 +124,6 @@ module.exports = function(got,logger,options,lightFanService) {
             await checkForOverNightSession(deviceName, floatDevice);
 
         } else if (idleScreen) {
-            // logger.debug(`${deviceName}: no session active screen.`);
             floatDevice.minutesInSession = 0;
             floatDevice.sessionEndTime = null; // clear stored end time when idle
             if (floatDevice.sessionEndTimer) {
@@ -157,11 +155,11 @@ module.exports = function(got,logger,options,lightFanService) {
     }
 
     async function anyDevicesInSession(minsBeforeCountInSession){
-        var devicesInSession = "";
-        var count = 0;
-        for (var key in options.floatDevices) {
+        let devicesInSession = "";
+        let count = 0;
+        for (const key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
-                var floatDevice = options.floatDevices[key];
+                const floatDevice = options.floatDevices[key];
                 if(floatDevice.status > 0 && floatDevice.silentStatus != 1 && floatDevice.minutesInSession > minsBeforeCountInSession){
                     count++
                     devicesInSession += `${key}|`;
@@ -175,10 +173,10 @@ module.exports = function(got,logger,options,lightFanService) {
     }
 
     function anyDevicesNotInSession(){
-        var devicesNotInSession = "";
-        for (var key in options.floatDevices) {
+        let devicesNotInSession = "";
+        for (const key in options.floatDevices) {
             if (options.floatDevices.hasOwnProperty(key)) {
-                var floatDevice = options.floatDevices[key];
+                const floatDevice = options.floatDevices[key];
                 logger.debug(`notinsession ${key}`);
                 if(floatDevice.status == 0 && floatDevice.silentStatus == 0){
                     devicesNotInSession += `${key}|`;

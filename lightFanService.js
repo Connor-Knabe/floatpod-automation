@@ -1,11 +1,11 @@
 module.exports = function (got, logger, options) {
     async function turnLightOn(deviceName, device) {
-        var defaultColor = options.defaultRGBColor;
+        let defaultColor = options.defaultRGBColor;
         if (deviceName == 'Infrared Sauna'){
             defaultColor = options.defaultSaunaRGBColor;
         }
 
-        var rgbColor = device.lightStripRGBColor ? device.lightStripRGBColor : defaultColor;
+        let rgbColor = device.lightStripRGBColor ? device.lightStripRGBColor : defaultColor;
         if(rgbColor != '0,0,0'){
             logger.info(`turning ${deviceName} light on and to color ${rgbColor}`)
             const lightColorUrl = generateIftttURL(device, options.ifttt.event.lightColorRGB);
@@ -62,7 +62,7 @@ module.exports = function (got, logger, options) {
     }
 
     function generateIftttURL(floatDevice, event) {
-        var url = options.ifttt.preUrl + floatDevice.iftttDeviceName + event + options.ifttt.postUrl;
+        const url = options.ifttt.preUrl + floatDevice.iftttDeviceName + event + options.ifttt.postUrl;
         return url;
     }
 
