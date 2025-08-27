@@ -1,6 +1,7 @@
 module.exports = function(options, got, logger, lightFanService, getLastWebhookUpdate, getLastSessionEndTime, setLastSessionEndTime) {
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
+    const { formatChicagoTime: formatChicagoTimeBase } = require('./timeUtils.js');
     
     // Track the last time any session ended (for rolling 1-hour fast polling window)
     let lastSessionEndTime = 0;
@@ -12,9 +13,9 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const outOfSessionChecks = {};
 
     const deviceLocks = {};
-    
+
     function formatChicagoTime(date) {
-        return date.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false });
+        return formatChicagoTimeBase(date, { hour12: false });
     }
     
     function isNightTime() {
@@ -105,7 +106,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         if (!isNaN(sessionEndTimestamp) && sessionEndTimestamp > 0) {
                             // Update the rolling window for fast polling
                             lastSessionEndTime = Date.now();
-                            logger.debug(`${key}: Session ended, fast polling active until ${new Date(lastSessionEndTime + (60 * 60 * 1000)).toLocaleString()}`);
+                            logger.debug(`${key}: Session ended, fast polling active until ${formatChicagoTime(new Date(lastSessionEndTime + (60 * 60 * 1000)))} (Chicago)`);
                             
                             // Also update the session end time for other components
                             setLastSessionEndTime(sessionEndTimestamp);

@@ -1,11 +1,11 @@
 const got = require('got');
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');
 const options = require('./options.js');
 const colorService = require('./colorService.js')(options);
+const { formatChicagoTime } = require('./timeUtils.js');
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 const log4js = require('log4js');
 const logger = log4js.getLogger();
@@ -17,13 +17,18 @@ const lightFanService = require('./lightFanService.js')(got, logger, options);
 let lastWebhookUpdate = null;
 let lastSessionEndTime = null;
 
+function markWebhook(source) {
+    lastWebhookUpdate = Date.now();
+    logger.debug(`${source} update received at: ${formatChicagoTime(lastWebhookUpdate)}`);
+}
+
 // Pass getters to cronService
-const cronService = require('./cronService.js')(options, got, logger, lightFanService, 
+require('./cronService.js')(options, got, logger, lightFanService,
     () => lastWebhookUpdate,  // getLastWebhookUpdate
     () => lastSessionEndTime,  // getLastSessionEndTime
-    (time) => { 
-        lastSessionEndTime = time; 
-        logger.debug(`Updated last session end time to: ${time ? new Date(time).toLocaleString('en-US', { timeZone: 'America/Chicago' }) : 'null'}`);
+    (time) => {
+        lastSessionEndTime = time;
+        logger.debug(`Updated last session end time to: ${time ? formatChicagoTime(time) : 'null'}`);
     }  // setLastSessionEndTime
 );
 
@@ -49,85 +54,69 @@ app.get('/', function (req, res) {
     res.send('200');
 });
 
-
-app.get('/motion-'+options.webhookKey, function (req, res) { 
-	lastWebhookUpdate = Date.now();
-	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
-	logger.debug(`Motion update received at: ${chicagoTime} (Chicago)`);
-
+app.get(`/motion-${options.webhookKey}`, (req, res) => {
+    markWebhook('Motion');
     res.send('200');
 });
 
-app.post('/checkout-'+options.webhookKey, function (req, res) { 
-	lastWebhookUpdate = Date.now();
-	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
-	logger.debug(`Checkout update received at: ${chicagoTime} (Chicago)`);
-
+app.post(`/checkout-${options.webhookKey}`, (req, res) => {
+    markWebhook('Checkout');
     res.send('200');
 });
 
+app.post(`/color-${options.webhookKey}`, (req, res) => {
+    markWebhook('Color');
+    try {
+        const { room_lighting_color: hexColor, room_title: roomTitle } = req.body;
+        let roomColor = null;
+        let rgbColor = null;
 
+        if (hexColor) {
+            roomColor = colorService.nearestColor(hexColor);
+            const rgb = colorService.hexToRgb(hexColor);
+            if (rgb) {
+                rgbColor = `${rgb.r},${rgb.g},${rgb.b}`;
+            }
+        }
 
-app.post('/color-'+options.webhookKey, function (req, res) { 
-	// Update last color update time
-	lastWebhookUpdate = Date.now();
-	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
-	logger.debug(`Color update received at: ${chicagoTime} (Chicago)`);
-	
-        let roomColor;
-        let rgbColor;
-    try{
+        if (roomTitle === 'Infrared Sauna') {
+            const sauna = options.devices['Infrared Sauna'];
+            if (roomColor && roomColor.name === 'Black') {
+                lightFanService.turnLightOff('Infrared Sauna', sauna);
+                sauna.lightStripRGBColor = '0,0,0';
+            } else if (rgbColor) {
+                sauna.lightStripRGBColor = rgbColor;
+            }
+            logger.debug('roomcolor is', roomColor);
+            logger.info(roomColor ? `Color is ${roomColor.name} RGB: ${sauna.lightStripRGBColor}` : `Color wasn't set for sauna`);
 
-		if(req.body['room_lighting_color']){
-			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
-			rgbColor = colorService.hexToRgb(req.body['room_lighting_color']);
-			rgbColor = `${rgbColor.r},${rgbColor.g},${rgbColor.b}`;
-		}
+            lightFanService.turnLightOn('Infrared Sauna', sauna);
+            clearTimeout(sauna.fanStartTimeout);
+            sauna.fanStartTimeout = setTimeout(async () => {
+                await lightFanService.turnFanOn('Infrared Sauna', sauna);
+            }, sauna.fanOnAfterMins * 60 * 1000);
 
-		if(req.body['room_title']=='Infrared Sauna'){
-			var sauna = options.devices['Infrared Sauna'];
-			if(roomColor && roomColor.name == 'Black'){
-				lightFanService.turnLightOff('Infrared Sauna', sauna);
-				options.devices[req.body['room_title']].lightStripRGBColor = '0,0,0';
-			} else {
-				options.devices[req.body['room_title']].lightStripRGBColor = rgbColor;
-			}
-			logger.debug('roomcolor is',roomColor);
-			if(roomColor != null){
-				logger.info(`Color is ${roomColor.name} RGB: ${options.devices['Infrared Sauna'].lightStripRGBColor}`);
-			} else {
-				logger.info(`Color wasn't set for sauna`);
-			}
-			lightFanService.turnLightOn('Infrared Sauna', sauna);
-			clearTimeout(sauna.fanStartTimeout);
-			sauna.fanStartTimeout = setTimeout(async () => {
-				await lightFanService.turnFanOn('Infrared Sauna', sauna);
-			}, sauna.fanOnAfterMins * 60 * 1000)
-
-			clearTimeout(sauna.lightTimeout);
-			sauna.lightTimeout = setTimeout(async () => {
-				await lightFanService.turnLightOff('Infrared Sauna', sauna);
-				await lightFanService.turnFanOff('Infrared Sauna', sauna);
-				sauna.lightStripRGBColor = null;
-			}, sauna.lightFanOffAfterMins * 60 * 1000)
-		} else {
-			if(roomColor && roomColor.name == 'Black'){
-				options.floatDevices[req.body['room_title']].lightStripRGBColor = '0,0,0';
-			} else {
-				options.floatDevices[req.body['room_title']].lightStripRGBColor = rgbColor;
-			}
-			if(roomColor != null){
-				logger.info(`Color is ${roomColor.name} RGB: ${options.floatDevices[req.body['room_title']].lightStripRGBColor}`);
-			} else {
-				logger.info(`Color wasn't set for ${req.body['room_title']}`);
-			}
-		}
-
-		
-    } catch (ex){
-        logger.error("failed to parse room_lighting_color", ex);
+            clearTimeout(sauna.lightTimeout);
+            sauna.lightTimeout = setTimeout(async () => {
+                await lightFanService.turnLightOff('Infrared Sauna', sauna);
+                await lightFanService.turnFanOff('Infrared Sauna', sauna);
+                sauna.lightStripRGBColor = null;
+            }, sauna.lightFanOffAfterMins * 60 * 1000);
+        } else {
+            const device = options.floatDevices[roomTitle];
+            if (device) {
+                if (roomColor && roomColor.name === 'Black') {
+                    device.lightStripRGBColor = '0,0,0';
+                } else if (rgbColor) {
+                    device.lightStripRGBColor = rgbColor;
+                }
+                logger.info(roomColor ? `Color is ${roomColor.name} RGB: ${device.lightStripRGBColor}` : `Color wasn't set for ${roomTitle}`);
+            }
+        }
+    } catch (ex) {
+        logger.error('failed to parse room_lighting_color', ex);
     }
-    res.send("OK");
+    res.send('OK');
 });
 
 app.listen(2336);
