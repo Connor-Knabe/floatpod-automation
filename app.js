@@ -2,17 +2,16 @@ const got = require('got');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-var options = require('./options.js');
+const options = require('./options.js');
 const colorService = require('./colorService.js')(options);
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
-var log4js = require('log4js');
-var logger = log4js.getLogger();
+const log4js = require('log4js');
+const logger = log4js.getLogger();
 logger.level = options.loggerLevel;
-logger.info("FloatPod automation start" + options.loggerLevel);
-logger.error("FloatPod automation error start" + options.loggerLevel);
-const lightFanService = require('./lightFanService.js')(got,logger,options);
+logger.info(`FloatPod automation start ${options.loggerLevel}`);
+const lightFanService = require('./lightFanService.js')(got, logger, options);
 
 // Track last webhook update time and last session end time
 let lastWebhookUpdate = null;
@@ -75,11 +74,9 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 	const chicagoTime = new Date(lastWebhookUpdate).toLocaleString('en-US', { timeZone: 'America/Chicago' });
 	logger.debug(`Color update received at: ${chicagoTime} (Chicago)`);
 	
-	var roomColor = null;
-	var rgbColor = null;
-	logger.debug('req',req.body);
+        let roomColor;
+        let rgbColor;
     try{
-		//needs refactor 
 
 		if(req.body['room_lighting_color']){
 			roomColor = colorService.nearestColor(req.body['room_lighting_color']);
@@ -128,7 +125,6 @@ app.post('/color-'+options.webhookKey, function (req, res) {
 
 		
     } catch (ex){
-		logger.debug('req.body',req.body);
         logger.error("failed to parse room_lighting_color", ex);
     }
     res.send("OK");
