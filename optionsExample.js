@@ -31,6 +31,7 @@ module.exports.floatDevices = {
         sessionEndTimer: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
+        lastColorChangeTime: null,
         healthCheckUrl:'URLHERE',
         status: null,
         silentStatus: null
@@ -43,6 +44,7 @@ module.exports.floatDevices = {
         sessionEndTimer: null,
         postSessionLightFanTimeoutMins: 25,
         lightStripRGBColor: null,
+        lastColorChangeTime: null,
         healthCheckUrl:'URLHERE',
         status: null,
         silentStatus: null
@@ -56,7 +58,8 @@ module.exports.devices = {
         lightTimeout: null,
         fanStartTimeout: null,
         lightFanOffAfterMins: 90,
-        fanOnAfterMins: 45
+        fanOnAfterMins: 45,
+        lastColorChangeTime: null
     }
 }
 

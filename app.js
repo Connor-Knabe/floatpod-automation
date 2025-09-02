@@ -87,6 +87,7 @@ app.post(`/color-${options.webhookKey}`, (req, res) => {
             } else if (rgbColor) {
                 sauna.lightStripRGBColor = rgbColor;
             }
+            sauna.lastColorChangeTime = Date.now();
             logger.debug('roomcolor is', roomColor);
             logger.info(roomColor ? `Color is ${roomColor.name} RGB: ${sauna.lightStripRGBColor}` : `Color wasn't set for sauna`);
 
@@ -110,6 +111,7 @@ app.post(`/color-${options.webhookKey}`, (req, res) => {
                 } else if (rgbColor) {
                     device.lightStripRGBColor = rgbColor;
                 }
+                device.lastColorChangeTime = Date.now();
                 logger.info(roomColor ? `Color is ${roomColor.name} RGB: ${device.lightStripRGBColor}` : `Color wasn't set for ${roomTitle}`);
             }
         }
