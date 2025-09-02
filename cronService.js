@@ -332,6 +332,35 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         true,
         'America/Chicago'
     );
+
+    // Reset default colors nightly at midnight unless changed within last 3 hours
+    const colorResetJob = new cron(
+        '0 0 * * *',
+        () => {
+            const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+            for (const [name, device] of Object.entries(options.floatDevices || {})) {
+                if (!device.lastColorChangeTime || device.lastColorChangeTime < cutoff) {
+                    device.lightStripRGBColor = null;
+                    device.lastColorChangeTime = null;
+                    logger.info(`${name}: midnight color reset to default`);
+                } else {
+                    logger.debug(`${name}: skipping midnight color reset (recent change)`);
+                }
+            }
+            for (const [name, device] of Object.entries(options.devices || {})) {
+                if (!device.lastColorChangeTime || device.lastColorChangeTime < cutoff) {
+                    device.lightStripRGBColor = null;
+                    device.lastColorChangeTime = null;
+                    logger.info(`${name}: midnight color reset to default`);
+                } else {
+                    logger.debug(`${name}: skipping midnight color reset (recent change)`);
+                }
+            }
+        },
+        null,
+        true,
+        'America/Chicago'
+    );
     
     // Initial check on startup
     (async () => {
@@ -355,10 +384,12 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
             clearInterval(interval);
         }
         job.stop();
+        colorResetJob.stop();
         process.exit();
     });
-    
+
+    colorResetJob.start();
     job.start();
-    logger.info('Cron job started');
+    logger.info('Cron jobs started');
     return job;
 };

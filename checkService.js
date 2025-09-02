@@ -10,20 +10,20 @@ module.exports = function(got, logger, options, lightFanService) {
         if (!floatDevice.sessionEndTime) {
             return;
         }
-        // Always trigger 10 seconds AFTER the session end time
-        const triggerTime = floatDevice.sessionEndTime.getTime() + 10000; // +10s
+        // Always trigger 20 seconds AFTER the session end time
+        const triggerTime = floatDevice.sessionEndTime.getTime() + 20000; // +20s
         const delay = triggerTime - Date.now();
         if (delay > 0) {
             const minutes = Math.floor(delay / 60000);
             const seconds = Math.round((delay % 60000) / 1000);
-            logger.debug(`${deviceName}: scheduling light/fan for 10s after session end in ${minutes}m ${seconds}s`);
+            logger.debug(`${deviceName}: scheduling light/fan for 20s after session end in ${minutes}m ${seconds}s`);
             floatDevice.sessionEndTimer = setTimeout(async () => {
-                logger.info(`${deviceName}: session ended, turning light and fan on (10s post-session)`);
+                logger.info(`${deviceName}: session ended, turning light and fan on (20s post-session)`);
                 await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
                 floatDevice.sessionEndTimer = null;
             }, delay);
         } else {
-            logger.debug(`${deviceName}: session already ended >10s ago, turning light and fan on now`);
+            logger.debug(`${deviceName}: session already ended >20s ago, turning light and fan on now`);
             lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
         }
     }
