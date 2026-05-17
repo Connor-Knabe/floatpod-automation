@@ -2,6 +2,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const checkService = require('./checkService.js')(got,logger,options,lightFanService);
     const cron = require('cron').CronJob;
     const { formatChicagoTime: formatChicagoTimeBase } = require('./timeUtils.js');
+    const debugOvernightSessionCancel = options.debugOvernightSessionCancel === true;
     
     // Track the last time any session ended (for rolling 1-hour fast polling window)
     let lastSessionEndTime = 0;
@@ -24,6 +25,16 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         const hours = chicagoTime.getHours();
         // Check if current time is between 10 PM (22) and 8 AM (8)
         return hours >= 22 || hours < 8;
+    }
+
+    function isOvernightCancelWindow() {
+        if (debugOvernightSessionCancel) {
+            return true;
+        }
+        const now = new Date();
+        const chicagoTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+        const hours = chicagoTime.getHours();
+        return hours >= 0 && hours < 1;
     }
     
     function isTuesdayOrWednesday() {
@@ -188,7 +199,13 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     const lightAndFanOnTime = floatDevice.lightAndFanOnTime;
                     const lightAndFanOn = lightAndFanOnTime && (Date.now() - lightAndFanOnTime < 2 * 60 * 60 * 1000);
                     
-                    if (lightAndFanOn) {
+                    const deviceNewSession = floatStatus.status === 1 || floatStatus.status === 2;
+
+                    if (deviceNewSession && isOvernightCancelWindow()) {
+                        // Keep the overnight cancel grace period based on real minutes, not 50-minute night polls.
+                        nextPollMs = 60 * 1000; // 1 minute
+                        pollReason = 'overnight new-session guard (1m)';
+                    } else if (lightAndFanOn) {
                         // Use 10-minute polling when light and fan are on
                         nextPollMs = 10 * 60 * 1000; // 10 minutes
                         pollReason = 'light and fan are on (10m)';

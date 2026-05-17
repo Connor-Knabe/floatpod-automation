@@ -1,3 +1,4 @@
+module.exports.debugOvernightSessionCancel = false;
 module.exports.apiKey = 'API_KEY_GOES_HERE';
 module.exports.defaultRGBColor = '255,127,0';
 module.exports.defaultSaunaRGBColor = '255,127,0';
@@ -59,4 +60,3 @@ module.exports.devices = {
         fanOnAfterMins: 45
     }
 }
-
