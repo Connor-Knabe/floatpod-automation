@@ -29,28 +29,53 @@ module.exports = function(got, logger, options, lightFanService) {
         floatDevice.overnightSessionCancelSent = false;
     }
 
-    function schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession) {
+    function clearSessionEndTimer(floatDevice) {
         if (floatDevice.sessionEndTimer) {
             clearTimeout(floatDevice.sessionEndTimer);
             floatDevice.sessionEndTimer = null;
         }
+        floatDevice.sessionLightFanTriggerTime = null;
+    }
+
+    function schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession, shouldPlayAtSessionEnd) {
         if (!floatDevice.sessionEndTime) {
             return;
         }
-        // Always trigger 10 seconds AFTER the session end time
-        const triggerTime = floatDevice.sessionEndTime.getTime() + 10000; // +10s
+
+        if (floatDevice.endScheduleTriggered) {
+            return;
+        }
+
+        const triggerTime = shouldPlayAtSessionEnd
+            ? floatDevice.sessionEndTime.getTime()
+            : floatDevice.sessionEndTime.getTime() - (minsToPlayMusicBeforeEndSession * 60000);
+        const triggerReason = shouldPlayAtSessionEnd
+            ? '_DS_ song end'
+            : `music start (${minsToPlayMusicBeforeEndSession}m before end)`;
+
+        if (floatDevice.sessionLightFanTriggerTime === triggerTime) {
+            return;
+        }
+
+        clearSessionEndTimer(floatDevice);
+        floatDevice.sessionLightFanTriggerTime = triggerTime;
+
         const delay = triggerTime - Date.now();
         if (delay > 0) {
             const minutes = Math.floor(delay / 60000);
             const seconds = Math.round((delay % 60000) / 1000);
-            logger.debug(`${deviceName}: scheduling light/fan for 10s after session end in ${minutes}m ${seconds}s`);
+            logger.debug(`${deviceName}: scheduling light/fan for ${triggerReason} in ${minutes}m ${seconds}s`);
             floatDevice.sessionEndTimer = setTimeout(async () => {
-                logger.info(`${deviceName}: session ended, turning light and fan on (10s post-session)`);
+                logger.info(`${deviceName}: ${triggerReason}, turning light and fan on`);
                 await lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
+                floatDevice.endScheduleTriggered = true;
                 floatDevice.sessionEndTimer = null;
+                floatDevice.sessionLightFanTriggerTime = null;
             }, delay);
         } else {
-            logger.debug(`${deviceName}: session already ended >10s ago, turning light and fan on now`);
+            logger.debug(`${deviceName}: ${triggerReason} already passed, turning light and fan on now`);
+            floatDevice.endScheduleTriggered = true;
+            floatDevice.sessionLightFanTriggerTime = null;
             lightFanService.lightAndFanOnOffPostSessionTimer(deviceName, floatDevice);
         }
     }
@@ -88,10 +113,8 @@ module.exports = function(got, logger, options, lightFanService) {
                 });
             }
 
-            let minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
-            if(floatStatus?.music_song?.includes("_DS_")){
-                minsToPlayMusicBeforeEndSession = 5;
-            }
+            const shouldPlayAtSessionEnd = floatStatus?.music_song?.includes("_DS_");
+            const minsToPlayMusicBeforeEndSession = Number(floatStatus.music_pre_end) > 5 ? Number(floatStatus.music_pre_end) : 5;
 
             // Use controller-provided end_time (includes delay)
             let newEndTime = null;
@@ -115,11 +138,10 @@ module.exports = function(got, logger, options, lightFanService) {
                     lightFanService.turnFanOff(deviceName, floatDevice);
                     lightFanService.turnLightOff(deviceName, floatDevice);
                     floatDevice.minutesInSession = 1;
-                    schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession);
+                    floatDevice.endScheduleTriggered = false;
                 } else if (newEndTime.getTime() !== floatDevice.sessionEndTime.getTime()) {
                     logger.info(`${deviceName}: session end time changed from ${floatDevice.sessionEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })} to ${newEndTime.toLocaleString('en-US', { timeZone: 'America/Chicago' })}`);
                     floatDevice.sessionEndTime = newEndTime;
-                    schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession);
                 }
             } else if (!floatDevice.sessionEndTime) {
                 // Fallback to manual calculation if end_time not provided
@@ -131,7 +153,10 @@ module.exports = function(got, logger, options, lightFanService) {
                 lightFanService.turnFanOff(deviceName, floatDevice);
                 lightFanService.turnLightOff(deviceName, floatDevice);
                 floatDevice.minutesInSession = 1;
-                schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession);
+                floatDevice.endScheduleTriggered = false;
+            }
+            if (floatDevice.sessionEndTime) {
+                schedulePostSessionStart(deviceName, floatDevice, minsToPlayMusicBeforeEndSession, shouldPlayAtSessionEnd);
             }
             const timeRemainingMs = floatDevice.sessionEndTime ? floatDevice.sessionEndTime.getTime() - Date.now() : null;
             if (timeRemainingMs !== null) {
@@ -152,20 +177,16 @@ module.exports = function(got, logger, options, lightFanService) {
                 lightFanService.turnLightOff(deviceName, floatDevice);
                 floatDevice.minutesInSession = 1;
             }
-            if (floatDevice.sessionEndTimer) {
-                clearTimeout(floatDevice.sessionEndTimer);
-                floatDevice.sessionEndTimer = null;
-            }
+            clearSessionEndTimer(floatDevice);
+            floatDevice.endScheduleTriggered = false;
             await checkForOverNightSession(deviceName, floatDevice);
 
         } else if (idleScreen) {
             clearOvernightSessionState(floatDevice);
             floatDevice.minutesInSession = 0;
             floatDevice.sessionEndTime = null; // clear stored end time when idle
-            if (floatDevice.sessionEndTimer) {
-                clearTimeout(floatDevice.sessionEndTimer);
-                floatDevice.sessionEndTimer = null;
-            }
+            clearSessionEndTimer(floatDevice);
+            floatDevice.endScheduleTriggered = false;
             await checkForAllDevicesInSession();
         }
     }
