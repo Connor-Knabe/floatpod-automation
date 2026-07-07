@@ -38,10 +38,10 @@ function performInitialHealthChecks() {
     for (const [deviceName, device] of Object.entries(options.floatDevices || {})) {
         if (device.healthCheckUrl) {
             logger.debug(`${deviceName}: Making initial health check`);
-            got.get(device.healthCheckUrl, { timeout: 10000 })
+            got.get(device.healthCheckUrl, { timeout: 10000, retry: 0 })
                 .then(() => logger.info(`${deviceName}: Initial health check successful`))
-                .catch(ex => 
-                    logger.error(`${deviceName}: Initial health check failed: ${ex.message}`, ex)
+                .catch(ex =>
+                    logger.error(`${deviceName}: Initial health check failed: ${ex.message}`)
                 );
         }
     }
@@ -114,7 +114,7 @@ app.post(`/color-${options.webhookKey}`, (req, res) => {
             }
         }
     } catch (ex) {
-        logger.error('failed to parse room_lighting_color', ex);
+        logger.error(`failed to parse room_lighting_color: ${ex.message}`);
     }
     res.send('OK');
 });

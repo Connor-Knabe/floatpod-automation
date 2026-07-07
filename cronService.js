@@ -12,6 +12,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     const deviceIntervals = {};
     const sessionEndTimeouts = {};
     const outOfSessionChecks = {};
+    const deviceErrorCounts = {};
 
     const deviceLocks = {};
 
@@ -70,6 +71,18 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         return false;
     }
     
+    // Failed devices retry with capped exponential backoff (1m → 2m → 4m → 8m → 15m)
+    // instead of hammering a dead endpoint every 60s, and log the message only — a
+    // full got error object serializes to ~40 lines of timings per failure.
+    function scheduleErrorRetry(key, stage, ex) {
+        deviceErrorCounts[key] = (deviceErrorCounts[key] || 0) + 1;
+        const attempt = deviceErrorCounts[key];
+        const delayMs = Math.min(15 * 60 * 1000, 60 * 1000 * 2 ** Math.min(attempt - 1, 4));
+        logger.error(`${key}: ${stage} failed (attempt ${attempt}): ${ex.message} - retrying in ${Math.round(delayMs / 1000)}s`);
+        clearTimeout(deviceIntervals[key]);
+        deviceIntervals[key] = setTimeout(() => checkDevice(key), delayMs);
+    }
+
     async function checkDevice(key) {
         if (deviceLocks[key]) {
             logger.debug(`${key}: check already in progress, skipping`);
@@ -109,24 +122,6 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     }
                     logger.debug(`${key}: Session status - Status: ${floatStatus.status || 'N/A'}, Duration: ${durationText}`);
                     
-                    // Update last session end time when a session ends
-                    if (setLastSessionEndTime && floatDevice.sessionEndTime) {
-                        const sessionEndTime = new Date(floatDevice.sessionEndTime);
-                        const sessionEndTimestamp = sessionEndTime.getTime();
-                        
-                        if (!isNaN(sessionEndTimestamp) && sessionEndTimestamp > 0) {
-                            // Update the rolling window for fast polling
-                            lastSessionEndTime = Date.now();
-                            logger.debug(`${key}: Session ended, fast polling active until ${formatChicagoTime(new Date(lastSessionEndTime + (60 * 60 * 1000)))} (Chicago)`);
-                            
-                            // Also update the session end time for other components
-                            setLastSessionEndTime(sessionEndTimestamp);
-                            logger.debug(`${key}: Updated last session end time to ${formatChicagoTime(sessionEndTime)}`);
-                        } else {
-                            logger.debug(`${key}: Invalid session end time (${floatDevice.sessionEndTime}), not updating`);
-                        }
-                    }
-                    
                     // Get silence status in parallel
                     logger.debug(`${key}: Getting silence status`);
                     const silentData = await got.post(floatDevice.url, {
@@ -143,7 +138,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                         silentStatus = silentStatus ? silentStatus.msg : null;
                         logger.debug(`${key}: Silence status: ${silentStatus}`);
                     } catch (ex) {
-                        logger.error(`${key}: failed to parse silent status response`, ex);
+                        logger.error(`${key}: failed to parse silent status response: ${ex.message}`);
                     }
                     
                     // Log session details before processing
@@ -171,6 +166,19 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                             `${key}: Received idle status but session end time ${formatChicagoTime(floatDevice.sessionEndTime)} is within ${minsUntilEnd} minutes - assuming session still active`
                         );
                         floatStatus.status = 3;
+                    }
+
+                    // Refresh the fast-poll window only on an actual session end
+                    // (3 → non-3). The old check ran every poll while an end time was
+                    // merely set, renewing the window forever and logging a bogus
+                    // "Session ended" each time.
+                    if (previousStatus === 3 && floatStatus.status !== 3) {
+                        lastSessionEndTime = Date.now();
+                        logger.info(`${key}: Session ended, fast polling active until ${formatChicagoTime(new Date(lastSessionEndTime + (60 * 60 * 1000)))} (Chicago)`);
+                        if (setLastSessionEndTime && floatDevice.sessionEndTime) {
+                            const sessionEndTimestamp = new Date(floatDevice.sessionEndTime).getTime();
+                            setLastSessionEndTime(!isNaN(sessionEndTimestamp) && sessionEndTimestamp > 0 ? sessionEndTimestamp : Date.now());
+                        }
                     }
 
                     if (floatStatus.status !== 3) {
@@ -272,34 +280,25 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     const nextCheckMins = (nextPollMs / 60000).toFixed(1);
                     logger.debug(`${key}: Scheduled next check in ${nextCheckMins} minutes`);
                     deviceIntervals[key] = setTimeout(() => checkDevice(key), nextPollMs);
-                    
-                    // Make health check call
+                    deviceErrorCounts[key] = 0;
+
+                    // Make health check call. Explicit timeout + no retry: without one,
+                    // got waits forever on a hung endpoint and the pending sockets pile
+                    // up poll after poll.
                     logger.debug(`${key}: Making health check call`);
-                    got.get(floatDevice.healthCheckUrl)
+                    got.get(floatDevice.healthCheckUrl, { timeout: 10000, retry: 0 })
                         .then(() => logger.debug(`${key}: Health check successful`))
-                        .catch(ex => 
-                            logger.error(`${key}: Health check failed: ${ex.message}`, ex)
+                        .catch(ex =>
+                            logger.error(`${key}: Health check failed: ${ex.message}`)
                         );
                 } else {
                     logger.warn(`${key}: No float status received`);
                 }
             } catch (ex) {
-                const errorTime = new Date();
-                logger.error(`${key}: [${formatChicagoTime(errorTime)}] Failed to process status after ${Date.now() - startTime}ms`, ex);
-                // On error, retry after 1 minute
-                clearInterval(deviceIntervals[key]);
-                const retryTime = Date.now() + 60000;
-                logger.debug(`${key}: Will retry at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
-                deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
+                scheduleErrorRetry(key, `process status (after ${Date.now() - startTime}ms)`, ex);
             }
         } catch (ex) {
-            const errorTime = new Date();
-            logger.error(`${key}: [${formatChicagoTime(errorTime)}] API call failed after ${Date.now() - startTime}ms`, ex);
-            // On error, retry after 1 minute
-            clearInterval(deviceIntervals[key]);
-            const retryTime = Date.now() + 60000;
-            logger.debug(`${key}: Will retry API call at ${formatChicagoTime(new Date(retryTime))} (Chicago)`);
-            deviceIntervals[key] = setTimeout(() => checkDevice(key), 60000);
+            scheduleErrorRetry(key, `API call (after ${Date.now() - startTime}ms)`, ex);
         } finally {
             deviceLocks[key] = false;
         }
@@ -327,7 +326,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     break;
                 }
             } catch (error) {
-                logger.error(`Error checking session status for ${key}:`, error);
+                logger.error(`Error checking session status for ${key}: ${error.message}`);
             }
         }
         
