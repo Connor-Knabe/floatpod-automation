@@ -22,6 +22,30 @@ function markWebhook(source) {
     logger.debug(`${source} update received at: ${formatChicagoTime(lastWebhookUpdate)}`);
 }
 
+async function relayFloatHelmColor(roomTitle, hexColor) {
+    const controlPlaneUrl = process.env.FLOATPOD_CONTROL_PLANE_URL;
+    const bypassToken = process.env.SITES_BYPASS_TOKEN;
+    if (!controlPlaneUrl || !bypassToken) {
+        return false;
+    }
+    const endpoint = new URL(`/color-${options.webhookKey}`, controlPlaneUrl);
+    if (endpoint.protocol !== 'https:') {
+        throw new Error('FLOATPOD_CONTROL_PLANE_URL must use HTTPS');
+    }
+    await got.post(endpoint, {
+        json: {
+            room_title: roomTitle,
+            room_lighting_color: hexColor
+        },
+        headers: {
+            'OAI-Sites-Authorization': `Bearer ${bypassToken}`
+        },
+        timeout: 10000,
+        retry: 0
+    });
+    return true;
+}
+
 // Pass getters to cronService
 require('./cronService.js')(options, got, logger, lightFanService,
     () => lastWebhookUpdate,  // getLastWebhookUpdate
@@ -64,7 +88,7 @@ app.post(`/checkout-${options.webhookKey}`, (req, res) => {
     res.send('200');
 });
 
-app.post(`/color-${options.webhookKey}`, (req, res) => {
+app.post(`/color-${options.webhookKey}`, async (req, res) => {
     markWebhook('Color');
     try {
         const { room_lighting_color: hexColor, room_title: roomTitle } = req.body;
@@ -113,8 +137,15 @@ app.post(`/color-${options.webhookKey}`, (req, res) => {
                 logger.info(roomColor ? `Color is ${roomColor.name} RGB: ${device.lightStripRGBColor}` : `Color wasn't set for ${roomTitle}`);
             }
         }
+        if (roomTitle !== 'Infrared Sauna' && roomTitle && hexColor) {
+            const relayed = await relayFloatHelmColor(roomTitle, hexColor);
+            if (relayed) {
+                logger.info(`Relayed customer color to control plane for ${roomTitle}`);
+            }
+        }
     } catch (ex) {
         logger.error(`failed to parse room_lighting_color: ${ex.message}`);
+        return res.status(502).send('Color update could not be completed');
     }
     res.send('OK');
 });
