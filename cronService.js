@@ -71,6 +71,16 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         return false;
     }
     
+    function scheduleDeviceCheck(key, delayMs) {
+        clearTimeout(deviceIntervals[key]);
+        deviceIntervals[key] = setTimeout(() => {
+            // A fired Timeout object stays truthy, so clear our reference before
+            // checking. This lets the cron watchdog detect an unscheduled device.
+            deviceIntervals[key] = null;
+            checkDevice(key);
+        }, delayMs);
+    }
+
     // Failed devices retry with capped exponential backoff (1m → 2m → 4m → 8m → 15m)
     // instead of hammering a dead endpoint every 60s, and log the message only — a
     // full got error object serializes to ~40 lines of timings per failure.
@@ -79,8 +89,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
         const attempt = deviceErrorCounts[key];
         const delayMs = Math.min(15 * 60 * 1000, 60 * 1000 * 2 ** Math.min(attempt - 1, 4));
         logger.error(`${key}: ${stage} failed (attempt ${attempt}): ${ex.message} - retrying in ${Math.round(delayMs / 1000)}s`);
-        clearTimeout(deviceIntervals[key]);
-        deviceIntervals[key] = setTimeout(() => checkDevice(key), delayMs);
+        scheduleDeviceCheck(key, delayMs);
     }
 
     async function checkDevice(key) {
@@ -275,11 +284,10 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                     const processingTime = endTime - startTime;
                     logger.debug(`${key}: Processing completed in ${processingTime}ms`);
                     
-                    // Clear any existing interval and set a new one
-                    clearInterval(deviceIntervals[key]);
+                    // Schedule the next device check
                     const nextCheckMins = (nextPollMs / 60000).toFixed(1);
                     logger.debug(`${key}: Scheduled next check in ${nextCheckMins} minutes`);
-                    deviceIntervals[key] = setTimeout(() => checkDevice(key), nextPollMs);
+                    scheduleDeviceCheck(key, nextPollMs);
                     deviceErrorCounts[key] = 0;
 
                     // Make health check call. Explicit timeout + no retry: without one,
@@ -292,7 +300,11 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
                             logger.error(`${key}: Health check failed: ${ex.message}`)
                         );
                 } else {
-                    logger.warn(`${key}: No float status received`);
+                    scheduleErrorRetry(
+                        key,
+                        'status response',
+                        new Error('controller returned no float status')
+                    );
                 }
             } catch (ex) {
                 scheduleErrorRetry(key, `process status (after ${Date.now() - startTime}ms)`, ex);
@@ -368,7 +380,7 @@ module.exports = function(options, got, logger, lightFanService, getLastWebhookU
     process.on('SIGINT', () => {
         logger.info('Shutting down...');
         for (const interval of Object.values(deviceIntervals)) {
-            clearInterval(interval);
+            clearTimeout(interval);
         }
         job.stop();
         process.exit();
